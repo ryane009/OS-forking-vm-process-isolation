@@ -42,8 +42,10 @@ void end_game(int* cells, size_t width, size_t height, snake_t* snake_p) {
     // Game over!
 
     // Free any memory we've taken
-    teardown(cells, snake_p);
     free(cells);
+    cells = NULL;
+    teardown(cells, snake_p);
+
 
     // ****************** UNCOMMENT THIS CODE IN PART 2B ***********************
     /*
