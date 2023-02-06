@@ -34,6 +34,7 @@ enum board_init_status initialize_default_board(int** cells_p, size_t* width_p,
     *width_p = 20;
     *height_p = 10;
     int* cells = malloc(20 * 10 * sizeof(int));
+    free(cells);
     *cells_p = cells;
     for (int i = 0; i < 20 * 10; i++) {
         cells[i] = FLAG_PLAIN_CELL;
