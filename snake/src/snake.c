@@ -74,6 +74,7 @@ int main(int argc, char** argv) {
     enum board_init_status status;
 
     // initialize board from command line arguments
+    enum board_init_status value = initialize_default_board(&cells, &width, &height);
     switch (argc) {
         case (2):
             snake_grows = atoi(argv[1]);
@@ -101,7 +102,7 @@ int main(int argc, char** argv) {
         case (1):
         default:
             printf("usage: snake <GROWS: 0|1> [BOARD STRING]\n");
-            return 0;
+            return value;
     }
 
     // ----------- DO NOT MODIFY ANYTHING IN `main` ABOVE THIS LINE -----------
@@ -127,7 +128,8 @@ int main(int argc, char** argv) {
         "   __________/ /    \n"
         "-=:___________/\n");
 
-    // initialize_window(width, height);
-    // TODO: implement the game loop here (Part 1A)!
-    // end_game(cells, width, height, &snake);
+    initialize_window(width, height);
+    //TODO: implement the game loop here (Part 1A)!
+    end_game(cells, width, height, &snake);
+
 }
