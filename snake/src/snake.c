@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
         case (1):
         default:
             printf("usage: snake <GROWS: 0|1> [BOARD STRING]\n");
-            return value;
+            return 0;
     }
 
     // ----------- DO NOT MODIFY ANYTHING IN `main` ABOVE THIS LINE -----------
@@ -119,8 +119,6 @@ int main(int argc, char** argv) {
     // ? save name_buffer ?
     // ? save mbslen(name_buffer) ?
 
-    // TODO: Remove this message, uncomment the code below this message
-    //       and implement Part 1A here.
     printf(
         "             ____   \n"
         "Hello       / . .\\ \n"
