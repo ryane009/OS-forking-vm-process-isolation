@@ -40,7 +40,7 @@ enum input_key get_input() {
  */
 void end_game(int* cells, size_t width, size_t height, snake_t* snake_p) {
     // Game over!
-
+    g_game_over = 1;
     // Free any memory we've taken
     teardown(cells, snake_p);
 
@@ -128,7 +128,13 @@ int main(int argc, char** argv) {
         "-=:___________/\n");
 
     initialize_window(width, height);
+    
     //TODO: implement the game loop here (Part 1A)!
+    while(g_game_over != 1){
+        usleep(100000);
+        update(cells, width, height, NULL, INPUT_NONE, 0);
+        render_game(cells, width, height);
+    }
     end_game(cells, width, height, &snake);
 
 }
