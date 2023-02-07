@@ -76,7 +76,7 @@ enum board_init_status initialize_game(int** cells_p, size_t* width_p,
     g_game_over = 0;  // 1 if game is over, 0 otherwise
     g_score = 0;      // game score: 1 point for every food eaten
     g_cell_position = 0;
-    g_curr_direction = INPUT_NONE;
+    g_curr_direction = UP;
 
     return value;
 }
