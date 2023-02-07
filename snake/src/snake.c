@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
     enum board_init_status status;
 
     // initialize board from command line arguments
-    enum board_init_status value = initialize_default_board(&cells, &width, &height);
+    status = initialize_default_board(&cells, &width, &height);
     switch (argc) {
         case (2):
             snake_grows = atoi(argv[1]);
