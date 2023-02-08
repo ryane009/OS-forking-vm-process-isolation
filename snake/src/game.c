@@ -29,7 +29,7 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
     // walls, so it does not handle the case where a snake runs off the board.
 
     // TODO: implement!
-    if((cells[g_snake_x] == FLAG_WALL)){
+    if(cells[g_snake_x] == FLAG_WALL){
         g_game_over = 1;
     } 
     cells[g_snake_x] = FLAG_PLAIN_CELL;
