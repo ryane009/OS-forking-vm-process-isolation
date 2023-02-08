@@ -3,12 +3,12 @@
 #include <stdlib.h>
 
 // TODO: define global variables needed for your snake! (part 1A)
-*g_snake_x = 0;
-*g_snake_y = 0;
+g_snake_x = 0;
+g_snake_y = 0;
 enum curr_direction g_curr_direction = RIGHT;
 // Definition of global variables for game status.
-int g_game_over;
-int g_score;
+int g_game_over = 0;
+int g_score = 0;
 
 /** Sets the seed for random number generation.
  * Arguments:
