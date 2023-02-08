@@ -29,7 +29,8 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
     // walls, so it does not handle the case where a snake runs off the board.
 
     // TODO: implement!
-    *cells += 1;
+    g_snake_x += 1;
+    cells[g_snake_x] = FLAG_SNAKE;
 }
 
 /** Sets a random space on the given board to food.
