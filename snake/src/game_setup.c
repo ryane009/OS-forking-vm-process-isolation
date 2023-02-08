@@ -77,7 +77,7 @@ enum board_init_status initialize_game(int** cells_p, size_t* width_p,
     g_score = 0;      // game score: 1 point for every food eaten
     g_snake_x = 10;
     g_snake_y = 10;
-    g_curr_direction = UP;
+    g_curr_direction = RIGHT;
 
     return value;
 }
