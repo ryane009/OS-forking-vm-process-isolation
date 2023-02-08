@@ -3,8 +3,9 @@
 #include <stdlib.h>
 
 // TODO: define global variables needed for your snake! (part 1A)
-int g_cell_position;
-enum curr_direction g_curr_direction = UP;
+*g_snake_x = 0;
+*g_snake_y = 0;
+enum curr_direction g_curr_direction = RIGHT;
 // Definition of global variables for game status.
 int g_game_over;
 int g_score;
