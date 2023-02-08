@@ -23,7 +23,8 @@ enum input_key { INPUT_UP, INPUT_DOWN, INPUT_LEFT, INPUT_RIGHT, INPUT_NONE };
 
 enum curr_direction {UP, DOWN, RIGHT, LEFT};
 // TODO: declare global variables needed for your snake (as `extern`)! (part 1A)
-extern int g_cell_position;
+extern int g_snake_x;
+extern int g_snake_y;
 extern enum curr_direction g_curr_direction;
 
 /** Global variables for game status.
