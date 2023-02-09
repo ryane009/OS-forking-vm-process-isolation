@@ -29,13 +29,76 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
     // walls, so it does not handle the case where a snake runs off the board.
 
     // TODO: implement!
-    if(cells[g_snake_x + 1] == FLAG_WALL){
+    switch (input)
+    {
+        case INPUT_UP:
+            if(g_length != 1){
+                if(g_curr_direction != DOWN){
+                    g_curr_direction = UP;
+                }
+            }
+            else{
+                g_curr_direction = UP;
+            }
+            break;
+        case INPUT_DOWN:
+            if(g_length != 1){
+                if(g_curr_direction != UP){
+                    g_curr_direction = DOWN;
+                }
+            }
+            else{
+                g_curr_direction = UP;
+            }
+            break;
+        case INPUT_RIGHT:
+            if(g_length != 1){
+                if(g_curr_direction != LEFT){
+                    g_curr_direction = RIGHT;
+                }
+            }
+            else{
+                g_curr_direction = RIGHT;
+            }
+            break;
+        case INPUT_LEFT:
+            if(g_length != 1){
+                if(g_curr_direction != RIGHT){
+                    g_curr_direction = LEFT;
+                }
+            }
+            else{
+                g_curr_direction = LEFT;
+            }
+            break;          
+        default:
+            break;
+    }
+
+    if(cells[g_snake_cell + 1] == FLAG_WALL){
         g_game_over = 1;
     } 
     else{
-        cells[g_snake_x] = FLAG_PLAIN_CELL;
-        g_snake_x += 1;
-        cells[g_snake_x] = FLAG_SNAKE;
+        if(g_curr_direction == RIGHT){
+            cells[g_snake_cell] = FLAG_PLAIN_CELL;
+            g_snake_cell += 1;
+            cells[g_snake_cell] = FLAG_SNAKE;
+        }
+        else if(g_curr_direction == LEFT){
+            cells[g_snake_cell] = FLAG_PLAIN_CELL;
+            g_snake_cell -= 1;
+            cells[g_snake_cell] = FLAG_SNAKE;
+        }
+        else if(g_curr_direction == UP){
+            cells[g_snake_cell] = FLAG_PLAIN_CELL;
+            g_snake_cell += 20;
+            cells[g_snake_cell] = FLAG_SNAKE;
+        }
+        else{
+            cells[g_snake_cell] = FLAG_PLAIN_CELL;
+            g_snake_cell -= 20;
+            cells[g_snake_cell] = FLAG_SNAKE;
+        }
     }
     
 }
