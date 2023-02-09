@@ -94,7 +94,7 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
             g_snake_cell += 20;
             cells[g_snake_cell] = FLAG_SNAKE;
         }
-        else{
+        else if(g_curr_direction == DOWN){
             cells[g_snake_cell] = FLAG_PLAIN_CELL;
             g_snake_cell -= 20;
             cells[g_snake_cell] = FLAG_SNAKE;
