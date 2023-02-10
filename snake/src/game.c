@@ -83,14 +83,13 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
     || cells[g_snake_cell - 20] == FLAG_WALL){
         g_game_over = 1;
     } 
-
-    if(cells[g_snake_cell] == FLAG_FOOD){
-        g_score++;
-        cells[g_snake_cell] = FLAG_PLAIN_CELL;
-        place_food(cells, width, height);
-    }
-
     else{
+        if(cells[g_snake_cell] == FLAG_FOOD){
+            g_score ++;
+            cells[g_snake_cell] = FLAG_PLAIN_CELL;
+            place_food(cells, width, height);
+        }
+
         if(g_curr_direction == RIGHT){
             cells[g_snake_cell] = FLAG_PLAIN_CELL;
             g_snake_cell += 1;
@@ -111,8 +110,7 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
             g_snake_cell += 20;
             cells[g_snake_cell] = FLAG_SNAKE;
         }
-    }
-    
+    } 
 }
 
 /** Sets a random space on the given board to food.
