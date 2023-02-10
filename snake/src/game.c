@@ -8,27 +8,7 @@
 #include "linked_list.h"
 #include "mbstrings.h"
 
-/** Updates the game by a single step, and modifies the game information
- * accordingly. Arguments:
- *  - cells: a pointer to the first integer in an array of integers representing
- *    each board cell.
- *  - width: width of the board.
- *  - height: height of the board.
- *  - snake_p: pointer to your snake struct (not used until part 2!)
- *  - input: the next input.
- *  - growing: 0 if the snake does not grow on eating, 1 if it does.
- */
-void update(int* cells, size_t width, size_t height, snake_t* snake_p,
-            enum input_key input, int growing) {
-    // `update` should update the board, your snake's data, and global
-    // variables representing game information to reflect new state. If in the
-    // updated position, the snake runs into a wall or itself, it will not move
-    // and global variable g_game_over will be 1. Otherwise, it will be moved
-    // to the new position. If the snake eats food, the game score (`g_score`)
-    // increases by 1. This function assumes that the board is surrounded by
-    // walls, so it does not handle the case where a snake runs off the board.
-
-    // TODO: implement!
+void updateDirection(enum input_key input){
     switch (input)
     {
         case INPUT_UP:
@@ -48,7 +28,7 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
                 }
             }
             else{
-                g_curr_direction = UP;
+                g_curr_direction = DOWN;
             }
             break;
         case INPUT_RIGHT:
@@ -74,10 +54,42 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
         default:
             break;
     }
+}
+/** Updates the game by a single step, and modifies the game information
+ * accordingly. Arguments:
+ *  - cells: a pointer to the first integer in an array of integers representing
+ *    each board cell.
+ *  - width: width of the board.
+ *  - height: height of the board.
+ *  - snake_p: pointer to your snake struct (not used until part 2!)
+ *  - input: the next input.
+ *  - growing: 0 if the snake does not grow on eating, 1 if it does.
+ */
+void update(int* cells, size_t width, size_t height, snake_t* snake_p,
+            enum input_key input, int growing) {
+    // `update` should update the board, your snake's data, and global
+    // variables representing game information to reflect new state. If in the
+    // updated position, the snake runs into a wall or itself, it will not move
+    // and global variable g_game_over will be 1. Otherwise, it will be moved
+    // to the new position. If the snake eats food, the game score (`g_score`)
+    // increases by 1. This function assumes that the board is surrounded by
+    // walls, so it does not handle the case where a snake runs off the board.
 
-    if(cells[g_snake_cell + 1] == FLAG_WALL){
+    // TODO: implement!
+    
+    updateDirection(input);
+
+    if(cells[g_snake_cell + 1] == FLAG_WALL || cells[g_snake_cell - 1] == FLAG_WALL || cells[g_snake_cell + 20] == FLAG_WALL
+    || cells[g_snake_cell - 20] == FLAG_WALL){
         g_game_over = 1;
     } 
+
+    if(cells[g_snake_cell] == FLAG_FOOD){
+        g_score++;
+        cells[g_snake_cell] = FLAG_PLAIN_CELL;
+        place_food(cells, width, height);
+    }
+
     else{
         if(g_curr_direction == RIGHT){
             cells[g_snake_cell] = FLAG_PLAIN_CELL;
@@ -91,12 +103,12 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
         }
         else if(g_curr_direction == UP){
             cells[g_snake_cell] = FLAG_PLAIN_CELL;
-            g_snake_cell += 20;
+            g_snake_cell -= 20;
             cells[g_snake_cell] = FLAG_SNAKE;
         }
         else if(g_curr_direction == DOWN){
             cells[g_snake_cell] = FLAG_PLAIN_CELL;
-            g_snake_cell -= 20;
+            g_snake_cell += 20;
             cells[g_snake_cell] = FLAG_SNAKE;
         }
     }
