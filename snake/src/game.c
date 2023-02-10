@@ -55,6 +55,14 @@ void updateDirection(enum input_key input){
             break;
     }
 }
+
+void checkFood(int* cells, size_t width, size_t height){
+    if(cells[g_snake_cell] == FLAG_FOOD){
+            g_score ++;
+            cells[g_snake_cell] = FLAG_PLAIN_CELL;
+            place_food(cells, width, height);
+    }
+}
 /** Updates the game by a single step, and modifies the game information
  * accordingly. Arguments:
  *  - cells: a pointer to the first integer in an array of integers representing
@@ -84,30 +92,28 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
         g_game_over = 1;
     } 
     else{
-        if(cells[g_snake_cell] == FLAG_FOOD){
-            g_score ++;
-            cells[g_snake_cell] = FLAG_PLAIN_CELL;
-            place_food(cells, width, height);
-        }
-
         if(g_curr_direction == RIGHT){
             cells[g_snake_cell] = FLAG_PLAIN_CELL;
             g_snake_cell += 1;
+            checkFood(cells, width, height);
             cells[g_snake_cell] = FLAG_SNAKE;
         }
         else if(g_curr_direction == LEFT){
             cells[g_snake_cell] = FLAG_PLAIN_CELL;
             g_snake_cell -= 1;
+            checkFood(cells, width, height);
             cells[g_snake_cell] = FLAG_SNAKE;
         }
         else if(g_curr_direction == UP){
             cells[g_snake_cell] = FLAG_PLAIN_CELL;
             g_snake_cell -= 20;
+            checkFood(cells, width, height);
             cells[g_snake_cell] = FLAG_SNAKE;
         }
         else if(g_curr_direction == DOWN){
             cells[g_snake_cell] = FLAG_PLAIN_CELL;
             g_snake_cell += 20;
+            checkFood(cells, width, height);
             cells[g_snake_cell] = FLAG_SNAKE;
         }
     } 

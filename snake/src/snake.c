@@ -39,10 +39,9 @@ enum input_key get_input() {
  * `snake_p` is not needed until Part 2!
  */
 void end_game(int* cells, size_t width, size_t height, snake_t* snake_p) {
-    // Game over!
-    g_game_over = 1;
-    // Free any memory we've taken
     teardown(cells, snake_p);
+    // Game over!
+    // Free any memory we've taken
 
 
     // ****************** UNCOMMENT THIS CODE IN PART 2B ***********************

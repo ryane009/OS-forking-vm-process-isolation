@@ -13,6 +13,12 @@
 #define W_LOW_HEX 0x77
 #define DIGIT_START 0x30
 #define DIGIT_END 0x39
+#define QUOTE(x) #x
+#define STR(x) QUOTE(x)
+
+int g_col;
+int g_rows;
+int g_snakes;
 
 /** Initializes the board with walls around the edge of the board.
  *
@@ -53,6 +59,9 @@ enum board_init_status initialize_default_board(int** cells_p, size_t* width_p,
 
     // Add snake
     cells[20 * 2 + 2] = FLAG_SNAKE;
+    g_snake_cell = 20 * 2 + 2;
+
+    place_food(cells, *width_p, *height_p);
 
     return INIT_SUCCESS;
 }
@@ -72,14 +81,70 @@ enum board_init_status initialize_default_board(int** cells_p, size_t* width_p,
 enum board_init_status initialize_game(int** cells_p, size_t* width_p,
                                        size_t* height_p, snake_t* snake_p,
                                        char* board_rep) {
-    enum board_init_status value = initialize_default_board(cells_p, width_p, height_p);
+    enum board_init_status value;
+    if(board_rep == NULL){
+        value = initialize_default_board(cells_p, width_p, height_p);
+    }
+    else{
+        value = decompress_board_str(cells_p, width_p, height_p, snake_p, STR(board_rep));
+    }
+    
     g_game_over = 0;  // 1 if game is over, 0 otherwise
     g_score = 0;      // game score: 1 point for every food eaten
-    g_snake_cell = 20 * 2 + 2;
     g_length = 1;
     g_curr_direction = RIGHT;
 
     return value;
+}
+
+enum board_init_status addToBoard(int** cells_p, int num, char* token, size_t* width_p){
+    char* numStr = "";
+    token = strtok(NULL, numStr);
+    while(*token >= DIGIT_START && *token <= DIGIT_END){
+        numStr = strcat(numStr, token);
+        token = strtok(NULL, numStr);
+    }
+    int value = atoi(numStr);
+    g_col = value;
+    if(g_col > *((long*)width_p)){
+        return INIT_ERR_INCORRECT_DIMENSIONS;
+    }
+
+    for(int i = 0; i < value; i++){
+        cells_p[i] = &num;
+    }
+    return INIT_SUCCESS;
+}
+
+enum board_init_status initializeRow(int** cells_p, size_t* width_p, char* row, int rowNum){
+    enum board_init_status value;
+    while(row != NULL){
+        char first = row[0];
+        row = strtok(NULL, &first);
+        if(first == E_CAP_HEX){
+            value = addToBoard(cells_p, FLAG_PLAIN_CELL, row, width_p);
+            if(value == INIT_ERR_INCORRECT_DIMENSIONS){
+                return value;
+            }
+        }
+        else if(first == W_CAP_HEX){
+            value = addToBoard(cells_p, FLAG_WALL, row, width_p);
+            if(value == INIT_ERR_INCORRECT_DIMENSIONS){
+                return value;
+            }
+        }
+        else if(first == S_CAP_HEX){
+            value = addToBoard(cells_p, FLAG_SNAKE, row, width_p);
+            g_snakes ++;
+            if(value == INIT_ERR_INCORRECT_DIMENSIONS){
+                return value;
+            }
+        }
+        else{
+            return INIT_ERR_BAD_CHAR;
+        }
+    }
+    return INIT_SUCCESS;
 }
 
 /** Takes in a string `compressed` and initializes values pointed to by
@@ -99,5 +164,40 @@ enum board_init_status decompress_board_str(int** cells_p, size_t* width_p,
                                             size_t* height_p, snake_t* snake_p,
                                             char* compressed) {
     // TODO: implement!
-    return INIT_UNIMPLEMENTED;
+    enum board_init_status value;
+    char* del = "|"; 
+    char* token = compressed;
+    token = strtok(NULL, "B");
+    token = strtok(token, "x");
+    *height_p = atoi(token);
+    token = strtok(NULL, "x");
+
+    token = strtok(token, del);
+    *width_p = atoi(token);
+    int* cells = malloc(*height_p * *width_p * sizeof(int));
+    *cells_p = cells;
+
+    token = strtok(NULL, del);
+
+    g_rows = 0;
+    while(token != NULL){
+        value = initializeRow(cells_p, width_p, token, g_rows);
+        g_rows++;
+        if(value == INIT_ERR_INCORRECT_DIMENSIONS){
+                return value;
+        }
+        if(value == INIT_ERR_BAD_CHAR){
+                return value;
+        }
+        token = strtok(NULL, del);
+    }
+
+    if(g_snakes != 1){
+        return INIT_ERR_WRONG_SNAKE_NUM;
+    }
+    if(g_rows > *((long*)height_p)){
+        return INIT_ERR_INCORRECT_DIMENSIONS;
+    }
+
+    return INIT_SUCCESS;
 }
