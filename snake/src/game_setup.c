@@ -14,8 +14,6 @@
 #define DIGIT_START 0x30
 #define DIGIT_END 0x39
 
-int g_col;
-int g_rows;
 int g_snakes;
 
 /** Initializes the board with walls around the edge of the board.
@@ -95,45 +93,46 @@ enum board_init_status initialize_game(int** cells_p, size_t* width_p,
     return value;
 }
 
-enum board_init_status addToBoard(int** cells_p, int num, char* token, size_t* width_p){
-    char* numStr = &token[0];
-    token = strtok(NULL, numStr);
-    while(*token >= DIGIT_START && *token <= DIGIT_END){
-        numStr = strcat(numStr, token);
-        token = strtok(NULL, numStr);
-    }
-    int value = atoi(numStr);
-    g_col = value;
-    if(g_col > *((long*)width_p)){
+enum board_init_status addToBoard(int* cells, int num, char* token, size_t* width_p, int rowNum, int* col){
+    int value = atoi(token);
+    if((*col + value ) > (int)*width_p){
         return INIT_ERR_INCORRECT_DIMENSIONS;
     }
 
-    for(int i = 0; i < value; i++){
-        cells_p[i] = &num;
+    while(*token >= DIGIT_START && *token <= DIGIT_END){
+        token = &token[1];
     }
+
+    for(int i = *col; i < (*col + value); i++){
+        cells[((int)*width_p * rowNum) + i] = num;
+    }
+    *col = value + *col;
+
     return INIT_SUCCESS;
 }
 
-enum board_init_status initializeRow(int** cells_p, size_t* width_p, char* row, int rowNum){
+enum board_init_status initializeRow(int* cells, size_t* width_p, char* token, int rowNum){
     enum board_init_status value;
-    while(row != NULL){
-        char first = row[0];
-        row = strtok(NULL, &first);
+    char* row = token;
+    int num = 0;
+    int* col = &num;
+    while(*row != '\0'){
+        char first = *row;
+        row = &row[1];
         if(first == E_CAP_HEX){
-            value = addToBoard(cells_p, FLAG_PLAIN_CELL, row, width_p);
+            value = addToBoard(cells, FLAG_PLAIN_CELL, row, width_p, rowNum, col);
             if(value == INIT_ERR_INCORRECT_DIMENSIONS){
                 return value;
             }
         }
         else if(first == W_CAP_HEX){
-            value = addToBoard(cells_p, FLAG_WALL, row, width_p);
+            value = addToBoard(cells, FLAG_WALL, row, width_p, rowNum, col);
             if(value == INIT_ERR_INCORRECT_DIMENSIONS){
                 return value;
             }
         }
         else if(first == S_CAP_HEX){
-            value = addToBoard(cells_p, FLAG_SNAKE, row, width_p);
-            g_snakes ++;
+            value = addToBoard(cells, FLAG_SNAKE, row, width_p, rowNum, col);
             if(value == INIT_ERR_INCORRECT_DIMENSIONS){
                 return value;
             }
@@ -164,37 +163,63 @@ enum board_init_status decompress_board_str(int** cells_p, size_t* width_p,
     // TODO: implement!
     enum board_init_status value;
     char* del = "|"; 
-    char* token = compressed;
-    token = strtok(token, "x");
-    *height_p = atoi(&token[1]);
-    token = strtok(NULL, "x");
+    char* str = compressed;
+    char* token = str;
 
-    token = strtok(token, del);
-    *width_p = atoi(&token[1]);
+    //skipping over B
+    token = &str[1];
+    *height_p = atoi(token);
+    char digit = *token;
+
+    //removing digits
+    while(digit >= DIGIT_START && digit <= DIGIT_END){
+        token = &token[1];
+        digit = *token;
+    }
+
+    //removing x in String
+    token = &token[1];
+
+    //findiung width an initializing cells (since we want to preserve the values after this, we make the cell memory dynamic)
+    *width_p = atoi(token);
     int* cells = malloc(*height_p * *width_p * sizeof(int));
     *cells_p = cells;
 
-    token = strtok(NULL, del);
+    //removing digits of second dimension
+    digit = *token;
+    while(digit >= DIGIT_START && digit <= DIGIT_END){
+        token = &token[1];
+        digit = *token;
+    }
 
-    g_rows = 0;
+    //removing first delimeter
+    token = &token[1];
+
+    //getting first row
+    token = strtok(token, del);
+
+    int rows = 0;
     while(token != NULL){
-        value = initializeRow(cells_p, width_p, token, g_rows);
-        g_rows++;
-        if(value == INIT_ERR_INCORRECT_DIMENSIONS){
-                return value;
+        value = initializeRow(cells, width_p, token, rows);
+        rows++;
+        if(rows > (int)*height_p){
+            return INIT_ERR_INCORRECT_DIMENSIONS;
         }
+
+        if(value == INIT_ERR_INCORRECT_DIMENSIONS){
+            return value;
+        }
+
         if(value == INIT_ERR_BAD_CHAR){
-                return value;
+            return value;
         }
         token = strtok(NULL, del);
+
+        if(g_snakes != 1){
+            return INIT_ERR_WRONG_SNAKE_NUM;
+        }
     }
 
-    if(g_snakes != 1){
-        return INIT_ERR_WRONG_SNAKE_NUM;
-    }
-    if(g_rows > *((long*)height_p)){
-        return INIT_ERR_INCORRECT_DIMENSIONS;
-    }
 
     return INIT_SUCCESS;
 }
