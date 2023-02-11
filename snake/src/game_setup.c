@@ -13,8 +13,6 @@
 #define W_LOW_HEX 0x77
 #define DIGIT_START 0x30
 #define DIGIT_END 0x39
-#define QUOTE(x) #x
-#define STR(x) QUOTE(x)
 
 int g_col;
 int g_rows;
@@ -86,7 +84,7 @@ enum board_init_status initialize_game(int** cells_p, size_t* width_p,
         value = initialize_default_board(cells_p, width_p, height_p);
     }
     else{
-        value = decompress_board_str(cells_p, width_p, height_p, snake_p, STR(board_rep));
+        value = decompress_board_str(cells_p, width_p, height_p, snake_p, board_rep);
     }
     
     g_game_over = 0;  // 1 if game is over, 0 otherwise
@@ -98,7 +96,7 @@ enum board_init_status initialize_game(int** cells_p, size_t* width_p,
 }
 
 enum board_init_status addToBoard(int** cells_p, int num, char* token, size_t* width_p){
-    char* numStr = "";
+    char* numStr = &token[0];
     token = strtok(NULL, numStr);
     while(*token >= DIGIT_START && *token <= DIGIT_END){
         numStr = strcat(numStr, token);
@@ -167,13 +165,12 @@ enum board_init_status decompress_board_str(int** cells_p, size_t* width_p,
     enum board_init_status value;
     char* del = "|"; 
     char* token = compressed;
-    token = strtok(NULL, "B");
     token = strtok(token, "x");
-    *height_p = atoi(token);
+    *height_p = atoi(&token[1]);
     token = strtok(NULL, "x");
 
     token = strtok(token, del);
-    *width_p = atoi(token);
+    *width_p = atoi(&token[1]);
     int* cells = malloc(*height_p * *width_p * sizeof(int));
     *cells_p = cells;
 
