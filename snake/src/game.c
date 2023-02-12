@@ -56,11 +56,18 @@ void updateDirection(enum input_key input){
     }
 }
 
-void checkFood(int* cells, size_t width, size_t height){
+void checkGame(int* cells, size_t width, size_t height){
     if(cells[g_snake_cell] == FLAG_FOOD){
             g_score ++;
             cells[g_snake_cell] = FLAG_PLAIN_CELL;
             place_food(cells, width, height);
+    }
+
+    if(cells[g_snake_cell] == FLAG_WALL || cells[g_snake_cell] == FLAG_SNAKE){
+        g_game_over = 1;
+    }
+    else{
+        cells[g_snake_cell] = FLAG_SNAKE;
     }
 }
 /** Updates the game by a single step, and modifies the game information
@@ -87,36 +94,27 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
     
     updateDirection(input);
 
-    if(cells[g_snake_cell + 1] == FLAG_WALL || cells[g_snake_cell - 1] == FLAG_WALL || cells[g_snake_cell + 20] == FLAG_WALL
-    || cells[g_snake_cell - 20] == FLAG_WALL){
-        g_game_over = 1;
-    } 
-    else{
-        if(g_curr_direction == RIGHT){
-            cells[g_snake_cell] = FLAG_PLAIN_CELL;
-            g_snake_cell += 1;
-            checkFood(cells, width, height);
-            cells[g_snake_cell] = FLAG_SNAKE;
-        }
-        else if(g_curr_direction == LEFT){
-            cells[g_snake_cell] = FLAG_PLAIN_CELL;
-            g_snake_cell -= 1;
-            checkFood(cells, width, height);
-            cells[g_snake_cell] = FLAG_SNAKE;
-        }
-        else if(g_curr_direction == UP){
-            cells[g_snake_cell] = FLAG_PLAIN_CELL;
-            g_snake_cell -= 20;
-            checkFood(cells, width, height);
-            cells[g_snake_cell] = FLAG_SNAKE;
-        }
-        else if(g_curr_direction == DOWN){
-            cells[g_snake_cell] = FLAG_PLAIN_CELL;
-            g_snake_cell += 20;
-            checkFood(cells, width, height);
-            cells[g_snake_cell] = FLAG_SNAKE;
-        }
-    } 
+    
+    if(g_curr_direction == RIGHT){
+        cells[g_snake_cell] = FLAG_PLAIN_CELL;
+        g_snake_cell += 1;
+        checkGame(cells, width, height);
+    }
+    else if(g_curr_direction == LEFT){
+        cells[g_snake_cell] = FLAG_PLAIN_CELL;
+        g_snake_cell -= 1;
+        checkGame(cells, width, height);
+    }
+    else if(g_curr_direction == UP){
+        cells[g_snake_cell] = FLAG_PLAIN_CELL;
+        g_snake_cell -= (int)*(&width);
+        checkGame(cells, width, height);
+    }
+    else if(g_curr_direction == DOWN){
+        cells[g_snake_cell] = FLAG_PLAIN_CELL;
+        g_snake_cell += (int)*(&width);
+        checkGame(cells, width, height);
+    }
 }
 
 /** Sets a random space on the given board to food.

@@ -99,14 +99,10 @@ enum board_init_status addToBoard(int* cells, int num, char* token, size_t* widt
         return INIT_ERR_INCORRECT_DIMENSIONS;
     }
 
-    while(*token >= DIGIT_START && *token <= DIGIT_END){
-        token = &token[1];
-    }
-
     for(int i = *col; i < (*col + value); i++){
         cells[((int)*width_p * rowNum) + i] = num;
     }
-    *col = value + *col;
+    *col += value;
 
     return INIT_SUCCESS;
 }
@@ -118,24 +114,33 @@ enum board_init_status initializeRow(int* cells, size_t* width_p, char* token, i
     int* col = &num;
     while(*row != '\0'){
         char first = *row;
-        row = &row[1];
+        row++;
         if(first == E_CAP_HEX){
             value = addToBoard(cells, FLAG_PLAIN_CELL, row, width_p, rowNum, col);
             if(value == INIT_ERR_INCORRECT_DIMENSIONS){
                 return value;
             }
+            while(*row >= DIGIT_START && *row <= DIGIT_END){
+                row++;
+            }    
         }
         else if(first == W_CAP_HEX){
             value = addToBoard(cells, FLAG_WALL, row, width_p, rowNum, col);
             if(value == INIT_ERR_INCORRECT_DIMENSIONS){
                 return value;
             }
+            while(*row >= DIGIT_START && *row <= DIGIT_END){
+                row++;
+            }    
         }
         else if(first == S_CAP_HEX){
             value = addToBoard(cells, FLAG_SNAKE, row, width_p, rowNum, col);
             if(value == INIT_ERR_INCORRECT_DIMENSIONS){
                 return value;
             }
+            while(*row >= DIGIT_START && *row <= DIGIT_END){
+                row++;
+            }    
         }
         else{
             return INIT_ERR_BAD_CHAR;
@@ -162,23 +167,25 @@ enum board_init_status decompress_board_str(int** cells_p, size_t* width_p,
                                             char* compressed) {
     // TODO: implement!
     enum board_init_status value;
-    char* del = "|"; 
+    g_snakes = 0;
+
+
+    char* del = "|";
     char* str = compressed;
-    char* token = str;
 
     //skipping over B
-    token = &str[1];
+    char* token = &str[1];
     *height_p = atoi(token);
 
     //removing digits
     while(*token >= DIGIT_START && *token <= DIGIT_END){
-        token = &token[1];
+        token++;
     }
 
     //removing x in String
-    token = &token[1];
+    token++; 
 
-    //findiung width an initializing cells (since we want to preserve the values after this, we make the cell memory dynamic)
+    //finding width an initializing cells (since we want to preserve the values after this, we make the cell memory dynamic)
     *width_p = atoi(token);
     int* cells = malloc(*height_p * *width_p * sizeof(int));
     *cells_p = cells;
@@ -186,15 +193,23 @@ enum board_init_status decompress_board_str(int** cells_p, size_t* width_p,
     //removing digits of second dimension
     
     while(*token >= DIGIT_START && *token <= DIGIT_END){
-        token = &token[1];
+        token++;
     }
 
     //removing first delimeter
-    token = &token[1];
+    token++;
+
+    for(int i = 0; i < (int) strlen(compressed); i++){
+        if(compressed[i] == FLAG_SNAKE){
+            g_snakes++;
+            if(g_snakes != 1){
+                return INIT_ERR_WRONG_SNAKE_NUM;
+            }
+        }
+    }
 
     //getting first row
     token = strtok(token, del);
-
     int rows = 0;
     while(token != NULL){
         value = initializeRow(cells, width_p, token, rows);
@@ -211,12 +226,7 @@ enum board_init_status decompress_board_str(int** cells_p, size_t* width_p,
             return value;
         }
         token = strtok(NULL, del);
-
-        if(g_snakes != 1){
-            return INIT_ERR_WRONG_SNAKE_NUM;
-        }
     }
-
 
     return INIT_SUCCESS;
 }
