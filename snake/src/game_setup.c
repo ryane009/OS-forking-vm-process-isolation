@@ -169,12 +169,10 @@ enum board_init_status decompress_board_str(int** cells_p, size_t* width_p,
     //skipping over B
     token = &str[1];
     *height_p = atoi(token);
-    char digit = *token;
 
     //removing digits
-    while(digit >= DIGIT_START && digit <= DIGIT_END){
+    while(*token >= DIGIT_START && *token <= DIGIT_END){
         token = &token[1];
-        digit = *token;
     }
 
     //removing x in String
@@ -186,10 +184,9 @@ enum board_init_status decompress_board_str(int** cells_p, size_t* width_p,
     *cells_p = cells;
 
     //removing digits of second dimension
-    digit = *token;
-    while(digit >= DIGIT_START && digit <= DIGIT_END){
+    
+    while(*token >= DIGIT_START && *token <= DIGIT_END){
         token = &token[1];
-        digit = *token;
     }
 
     //removing first delimeter
