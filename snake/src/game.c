@@ -56,19 +56,22 @@ void updateDirection(enum input_key input){
     }
 }
 
-void checkGame(int* cells, size_t width, size_t height){
-    if(cells[g_snake_cell] == FLAG_FOOD){
-            g_score ++;
-            cells[g_snake_cell] = FLAG_PLAIN_CELL;
-            place_food(cells, width, height);
-    }
-
-    if(cells[g_snake_cell] == FLAG_WALL || cells[g_snake_cell] == FLAG_SNAKE){
+void updateBoard(int* cells, size_t width, size_t height, int newCell){
+    if(cells[newCell] == FLAG_WALL){
         g_game_over = 1;
     }
     else{
-        cells[g_snake_cell] = FLAG_SNAKE;
+        cells[g_snake_cell] = FLAG_PLAIN_CELL;
+        if(cells[newCell] == FLAG_FOOD){
+            cells[newCell] = FLAG_PLAIN_CELL;
+            g_score ++;
+            place_food(cells, width, height);
+            
+        }
+        cells[newCell] = FLAG_SNAKE;
+        g_snake_cell = newCell;
     }
+
 }
 /** Updates the game by a single step, and modifies the game information
  * accordingly. Arguments:
@@ -94,26 +97,19 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
     
     updateDirection(input);
 
+
     
     if(g_curr_direction == RIGHT){
-        cells[g_snake_cell] = FLAG_PLAIN_CELL;
-        g_snake_cell += 1;
-        checkGame(cells, width, height);
+        updateBoard(cells, width, height, g_snake_cell + 1);
     }
     else if(g_curr_direction == LEFT){
-        cells[g_snake_cell] = FLAG_PLAIN_CELL;
-        g_snake_cell -= 1;
-        checkGame(cells, width, height);
+        updateBoard(cells, width, height, g_snake_cell - 1);
     }
     else if(g_curr_direction == UP){
-        cells[g_snake_cell] = FLAG_PLAIN_CELL;
-        g_snake_cell -= (int)*(&width);
-        checkGame(cells, width, height);
+        updateBoard(cells, width, height, g_snake_cell - (int)*(&width));
     }
     else if(g_curr_direction == DOWN){
-        cells[g_snake_cell] = FLAG_PLAIN_CELL;
-        g_snake_cell += (int)*(&width);
-        checkGame(cells, width, height);
+        updateBoard(cells, width, height, g_snake_cell + (int)*(&width));
     }
 }
 
