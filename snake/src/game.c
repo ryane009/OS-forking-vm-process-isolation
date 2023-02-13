@@ -66,7 +66,9 @@ void updateBoard(int* cells, size_t width, size_t height, int newCell){
             cells[newCell] = FLAG_PLAIN_CELL;
             g_score ++;
             place_food(cells, width, height);
-            
+            if(cells[newCell] == FLAG_FOOD){
+                place_food(cells, width, height);
+            }
         }
         cells[newCell] = FLAG_SNAKE;
         g_snake_cell = newCell;
