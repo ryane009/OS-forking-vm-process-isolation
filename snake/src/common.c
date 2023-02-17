@@ -3,9 +3,6 @@
 #include <stdlib.h>
 
 // TODO: define global variables needed for your snake! (part 1A)
-int g_snake_cell;
-int g_length = 1;
-enum curr_direction g_curr_direction = RIGHT;
 // Definition of global variables for game status.
 int g_game_over = 0;
 int g_score = 0;
@@ -29,3 +26,7 @@ unsigned generate_index(unsigned size) {
     return rand() % size;
     /* DO NOT MODIFY THIS FUNCTION */
 }
+
+
+
+

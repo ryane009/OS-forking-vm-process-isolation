@@ -8,47 +8,47 @@
 #include "linked_list.h"
 #include "mbstrings.h"
 
-void updateDirection(enum input_key input){
+void updateDirection(enum input_key input, snake_t* snake){
     switch (input)
     {
         case INPUT_UP:
-            if(g_length != 1){
-                if(g_curr_direction != DOWN){
-                    g_curr_direction = UP;
+            if((*snake).length != 1){
+                if((*snake).curr_direction != DOWN){
+                    (*snake).curr_direction = UP;
                 }
             }
             else{
-                g_curr_direction = UP;
+                (*snake).curr_direction = UP;
             }
             break;
         case INPUT_DOWN:
-            if(g_length != 1){
-                if(g_curr_direction != UP){
-                    g_curr_direction = DOWN;
+            if((*snake).length != 1){
+                if((*snake).curr_direction != UP){
+                    (*snake).curr_direction = DOWN;
                 }
             }
             else{
-                g_curr_direction = DOWN;
+                (*snake).curr_direction = DOWN;
             }
             break;
         case INPUT_RIGHT:
-            if(g_length != 1){
-                if(g_curr_direction != LEFT){
-                    g_curr_direction = RIGHT;
+            if((*snake).length != 1){
+                if((*snake).curr_direction != LEFT){
+                    (*snake).curr_direction = RIGHT;
                 }
             }
             else{
-                g_curr_direction = RIGHT;
+                (*snake).curr_direction = RIGHT;
             }
             break;
         case INPUT_LEFT:
-            if(g_length != 1){
-                if(g_curr_direction != RIGHT){
-                    g_curr_direction = LEFT;
+            if((*snake).length != 1){
+                if((*snake).curr_direction != RIGHT){
+                    (*snake).curr_direction = LEFT;
                 }
             }
             else{
-                g_curr_direction = LEFT;
+                (*snake).curr_direction = LEFT;
             }
             break;          
         default:
@@ -56,24 +56,36 @@ void updateDirection(enum input_key input){
     }
 }
 
-void updateBoard(int* cells, size_t width, size_t height, int newCell){
-    if(cells[newCell] == FLAG_WALL){
+void updateBoard(int* cells, size_t width, size_t height, int new_cell, node_t* curr){
+    if(cells[new_cell] == FLAG_WALL){
         g_game_over = 1;
     }
     else{
-        cells[g_snake_cell] = FLAG_PLAIN_CELL;
-        if(cells[newCell] == FLAG_FOOD){
-            cells[newCell] = FLAG_PLAIN_CELL;
+        int* curr_ptr = (int*)curr->data;
+        int curr_index = *curr_ptr;
+        cells[curr_index] = FLAG_PLAIN_CELL;
+        if(new_cell == FLAG_FOOD){
+            cells[(int) new_cell] = FLAG_PLAIN_CELL;
             g_score ++;
             place_food(cells, width, height);
-            if(cells[newCell] == FLAG_FOOD){
+            if(cells[new_cell] == FLAG_FOOD){
                 place_food(cells, width, height);
             }
         }
-        cells[newCell] = FLAG_SNAKE;
-        g_snake_cell = newCell;
+        cells[new_cell] = FLAG_SNAKE;
+        
     }
 
+}
+
+void updateBody(int*cells, node_t* body){
+    int* front_ptr = (int*)body->prev->data;
+    int* curr_ptr = (int*)body->data;
+    int new_cell = *front_ptr;
+    int curr_cell = *curr_ptr;
+    cells[curr_cell] = FLAG_PLAIN_CELL;
+    cells[new_cell] = FLAG_SNAKE;
+    body->data = (void*)&new_cell;
 }
 /** Updates the game by a single step, and modifies the game information
  * accordingly. Arguments:
@@ -97,22 +109,44 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
 
     // TODO: implement!
     
-    updateDirection(input);
+    updateDirection(input, snake_p);
 
 
+    int* ptr = (int*)snake_p->snake_cells->data;
+    int first_cell = *ptr;
+    //The index of the cell at the beginning of the list
+
+    node_t* first = snake_p->snake_cells;
+
+    if((*snake_p).curr_direction == RIGHT){
+        first_cell++;
+        updateBoard(cells, width, height, first_cell, snake_p->snake_cells);
+    }
+    else if((*snake_p).curr_direction == LEFT){
+        first_cell--;
+        updateBoard(cells, width, height, first_cell, snake_p->snake_cells);
+    }
+    else if((*snake_p).curr_direction == UP){
+        first_cell -= (int)*(&width);
+        updateBoard(cells, width, height, first_cell, snake_p->snake_cells);
+    }
+    else if((*snake_p).curr_direction == DOWN){
+        first_cell += (int)*(&width);
+        updateBoard(cells, width, height, first_cell, snake_p->snake_cells);
+    }
+
+    if(first->next){
+        node_t* body = first->next;
+        while(body){
+            updateBody(cells, body);
+            if(body->next){
+                body = body->next;
+            }
+        }
+    }
     
-    if(g_curr_direction == RIGHT){
-        updateBoard(cells, width, height, g_snake_cell + 1);
-    }
-    else if(g_curr_direction == LEFT){
-        updateBoard(cells, width, height, g_snake_cell - 1);
-    }
-    else if(g_curr_direction == UP){
-        updateBoard(cells, width, height, g_snake_cell - (int)*(&width));
-    }
-    else if(g_curr_direction == DOWN){
-        updateBoard(cells, width, height, g_snake_cell + (int)*(&width));
-    }
+    snake_p->snake_cells->data = (void*)&first_cell;
+    
 }
 
 /** Sets a random space on the given board to food.
@@ -152,5 +186,6 @@ void read_name(char* write_into) {
  */
 void teardown(int* cells, snake_t* snake_p) {
     free(cells);
+    free(snake_p);
     // TODO: implement!
 }

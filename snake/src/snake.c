@@ -69,6 +69,19 @@ int main(int argc, char** argv) {
 
     // snake data (only used in part 2!)
     snake_t snake;    // your snake struct. (not used until part 2!)
+    // snake_t* pt = &snake;
+    // pt = (snake_t*)malloc(sizeof(snake));
+
+    // int index = (20 * 2 + 2);
+    // node_t* new_element = (node_t*)malloc(sizeof(node_t));
+    // snake.snake_cells = new_element;
+    // new_element->data = malloc(sizeof(int*));
+    // new_element->data = (void*)&index;
+    // new_element->prev = NULL;
+    // new_element->next = NULL;
+
+    // snake.curr_direction = RIGHT;
+    // snake.length = 1;
     int snake_grows;  // 1 if snake should grow, 0 otherwise.
 
     enum board_init_status status;
@@ -127,11 +140,13 @@ int main(int argc, char** argv) {
         "-=:___________/\n");
 
     initialize_window(width, height);
+
+    
     
     //TODO: implement the game loop here (Part 1A)!
     while(g_game_over != 1){
         usleep(100000);
-        update(cells, width, height, NULL, get_input(), 0);
+        update(cells, width, height, &snake, get_input(), snake_grows);
         render_game(cells, width, height);
     }
     end_game(cells, width, height, &snake);
