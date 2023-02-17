@@ -55,7 +55,6 @@ enum board_init_status initialize_default_board(int** cells_p, size_t* width_p,
 
     // Add snake
     cells[20 * 2 + 2] = FLAG_SNAKE;
-    g_snake_cell = 20 * 2 + 2;
 
     place_food(cells, *width_p, *height_p);
 
@@ -84,11 +83,22 @@ enum board_init_status initialize_game(int** cells_p, size_t* width_p,
     else{
         value = decompress_board_str(cells_p, width_p, height_p, snake_p, board_rep);
     }
+
+    int index = (20 * 2 + 2);
+    void* data = (void*)&index;
+    node_t* new_element = (node_t*)malloc(sizeof(node_t));
+    snake_p->snake_cells = new_element;
+    snake_p->snake_cells->data = malloc(sizeof(int*));
+    snake_p->snake_cells->data = data;
+    snake_p->snake_cells->prev = NULL;
+    snake_p->snake_cells->next = NULL;
+    // insert_first(&(snake_p->snake_cells), data, sizeof(int*));
     
     g_game_over = 0;  // 1 if game is over, 0 otherwise
     g_score = 0;      // game score: 1 point for every food eaten
-    g_length = 1;
-    g_curr_direction = RIGHT;
+    (*snake_p).length = 1;
+    (*snake_p).curr_direction = RIGHT;
+
 
     return value;
 }
@@ -115,7 +125,7 @@ enum board_init_status addToBoard(int* cells, int num, char* token, size_t* widt
     return INIT_SUCCESS;
 }
 
-enum board_init_status initializeRow(int* cells, size_t* width_p, char* token, int rowNum){
+enum board_init_status initializeRow(int* cells, size_t* width_p, char* token, int rowNum, snake_t* snake){
     enum board_init_status value;
     char* row = token;
     int num = 0;
@@ -142,7 +152,7 @@ enum board_init_status initializeRow(int* cells, size_t* width_p, char* token, i
             }    
         }
         else if(first == S_CAP_HEX){
-            g_snake_cell = rowNum * (int)*width_p + *col;
+            (*snake).snake_cells->data = (void*) ((long)(rowNum * (int)*width_p + *col));
             value = addToBoard(cells, FLAG_SNAKE, row, width_p, rowNum, col);
             g_snakes++;
             if(value == INIT_ERR_INCORRECT_DIMENSIONS){
@@ -222,7 +232,7 @@ enum board_init_status decompress_board_str(int** cells_p, size_t* width_p,
         if(rows + 1 > (int)*height_p){
             return INIT_ERR_INCORRECT_DIMENSIONS;
         }
-        value = initializeRow(cells, width_p, token, rows);
+        value = initializeRow(cells, width_p, token, rows, snake_p);
         rows++;
 
         if(value == INIT_ERR_INCORRECT_DIMENSIONS){
