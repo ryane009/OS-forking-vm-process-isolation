@@ -76,11 +76,11 @@ void updateBoard(int* cells, size_t width, size_t height, int new_cell, snake_t*
             }
         }
         int* ptr = &new_cell;
-        insert_first(&snake->snake_cells, (void*)ptr, sizeof(int));
+        insert_first(&snake->snake_cells, ptr, sizeof(int));
         cells[new_cell] = FLAG_SNAKE;
         
         if(growing == 0){
-            int remove_cell = *(int*)remove_last(&nodes);
+            int remove_cell = *((int*)remove_last(&snake->snake_cells));
             cells[remove_cell] = FLAG_PLAIN_CELL;
         }
     }
@@ -194,6 +194,6 @@ void read_name(char* write_into) {
  */
 void teardown(int* cells, snake_t* snake_p) {
     free(cells);
-    free(snake_p);
+    // free(snake_p);
     // TODO: implement!
 }
