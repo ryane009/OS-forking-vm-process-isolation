@@ -75,8 +75,8 @@ void insert_first(node_t** head_list, void* to_add, size_t size) {
   }
   else{
     node_t* curr = *head_list;
-    new_element->next = curr;
     curr->prev = new_element;
+    new_element->next = curr;
     new_element->prev = NULL;
     *head_list = new_element;
   }

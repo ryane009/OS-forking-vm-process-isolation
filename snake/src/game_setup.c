@@ -77,22 +77,25 @@ enum board_init_status initialize_game(int** cells_p, size_t* width_p,
                                        size_t* height_p, snake_t* snake_p,
                                        char* board_rep) {
     enum board_init_status value;
+    snake_p->snake_cells = NULL;
     if(board_rep == NULL){
         value = initialize_default_board(cells_p, width_p, height_p);
+        int index = 42;
+        insert_first(&snake_p->snake_cells, &index, sizeof(int));
     }
     else{
         value = decompress_board_str(cells_p, width_p, height_p, snake_p, board_rep);
     }
 
-    int index = (20 * 2 + 2);
-    void* data = (void*)&index;
-    node_t* new_element = (node_t*)malloc(sizeof(node_t));
-    snake_p->snake_cells = new_element;
-    snake_p->snake_cells->data = malloc(sizeof(int*));
-    snake_p->snake_cells->data = data;
-    snake_p->snake_cells->prev = NULL;
-    snake_p->snake_cells->next = NULL;
-    // insert_first(&(snake_p->snake_cells), data, sizeof(int*));
+
+    // node_t* new_element = (node_t*)malloc(sizeof(node_t));
+    // snake_p->snake_cells = new_element;
+    // snake_p->snake_cells->data = malloc(sizeof(int*));
+    // snake_p->snake_cells->data = data;
+    // snake_p->snake_cells->prev = NULL;
+    // snake_p->snake_cells->next = NULL;
+
+    
     
     g_game_over = 0;  // 1 if game is over, 0 otherwise
     g_score = 0;      // game score: 1 point for every food eaten
@@ -152,7 +155,8 @@ enum board_init_status initializeRow(int* cells, size_t* width_p, char* token, i
             }    
         }
         else if(first == S_CAP_HEX){
-            (*snake).snake_cells->data = (void*) ((long)(rowNum * (int)*width_p + *col));
+            int index = (rowNum * (int)*width_p + *col);
+            insert_first(&snake->snake_cells, &index, sizeof(int));
             value = addToBoard(cells, FLAG_SNAKE, row, width_p, rowNum, col);
             g_snakes++;
             if(value == INIT_ERR_INCORRECT_DIMENSIONS){

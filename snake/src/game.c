@@ -56,37 +56,46 @@ void updateDirection(enum input_key input, snake_t* snake){
     }
 }
 
-void updateBoard(int* cells, size_t width, size_t height, int new_cell, node_t* curr){
+void updateBoard(int* cells, size_t width, size_t height, int new_cell, snake_t* snake, int growing){
     if(cells[new_cell] == FLAG_WALL){
         g_game_over = 1;
     }
     else{
-        int* curr_ptr = (int*)curr->data;
-        int curr_index = *curr_ptr;
-        cells[curr_index] = FLAG_PLAIN_CELL;
+        node_t* nodes = snake->snake_cells;
         if(new_cell == FLAG_FOOD){
             cells[(int) new_cell] = FLAG_PLAIN_CELL;
             g_score ++;
             place_food(cells, width, height);
-            if(cells[new_cell] == FLAG_FOOD){
-                place_food(cells, width, height);
+            while(nodes){
+                if(cells[*((int*)nodes->data)] == FLAG_FOOD){
+                    place_food(cells, width, height);
+                }
+                if(nodes->next){
+                    nodes = nodes->next;
+                }
             }
         }
+        int* ptr = &new_cell;
+        insert_first(&snake->snake_cells, (void*)ptr, sizeof(int));
         cells[new_cell] = FLAG_SNAKE;
         
+        if(growing == 0){
+            int remove_cell = *(int*)remove_last(&nodes);
+            cells[remove_cell] = FLAG_PLAIN_CELL;
+        }
     }
 
 }
 
-void updateBody(int*cells, node_t* body){
-    int* front_ptr = (int*)body->prev->data;
-    int* curr_ptr = (int*)body->data;
-    int new_cell = *front_ptr;
-    int curr_cell = *curr_ptr;
-    cells[curr_cell] = FLAG_PLAIN_CELL;
-    cells[new_cell] = FLAG_SNAKE;
-    body->data = (void*)&new_cell;
-}
+// void updateBody(int*cells, node_t* body){
+//     int* front_ptr = (int*)body->prev->data;
+//     int* curr_ptr = (int*)body->data;
+//     int new_cell = *front_ptr;
+//     int curr_cell = *curr_ptr;
+//     cells[curr_cell] = FLAG_PLAIN_CELL;
+//     cells[new_cell] = FLAG_SNAKE;
+//     body->data = (void*)&new_cell;
+// }
 /** Updates the game by a single step, and modifies the game information
  * accordingly. Arguments:
  *  - cells: a pointer to the first integer in an array of integers representing
@@ -116,34 +125,33 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
     int first_cell = *ptr;
     //The index of the cell at the beginning of the list
 
-    node_t* first = snake_p->snake_cells;
 
     if((*snake_p).curr_direction == RIGHT){
         first_cell++;
-        updateBoard(cells, width, height, first_cell, snake_p->snake_cells);
+        updateBoard(cells, width, height, first_cell, snake_p, growing);
     }
     else if((*snake_p).curr_direction == LEFT){
         first_cell--;
-        updateBoard(cells, width, height, first_cell, snake_p->snake_cells);
+        updateBoard(cells, width, height, first_cell, snake_p, growing);
     }
     else if((*snake_p).curr_direction == UP){
         first_cell -= (int)*(&width);
-        updateBoard(cells, width, height, first_cell, snake_p->snake_cells);
+        updateBoard(cells, width, height, first_cell, snake_p, growing);
     }
     else if((*snake_p).curr_direction == DOWN){
         first_cell += (int)*(&width);
-        updateBoard(cells, width, height, first_cell, snake_p->snake_cells);
+        updateBoard(cells, width, height, first_cell, snake_p, growing);
     }
 
-    if(first->next){
-        node_t* body = first->next;
-        while(body){
-            updateBody(cells, body);
-            if(body->next){
-                body = body->next;
-            }
-        }
-    }
+    // if(first->next){
+    //     node_t* body = first->next;
+    //     while(body){
+    //         updateBody(cells, body);
+    //         if(body->next){
+    //             body = body->next;
+    //         }
+    //     }
+    // }
     
     snake_p->snake_cells->data = (void*)&first_cell;
     
