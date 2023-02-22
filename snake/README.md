@@ -2,6 +2,13 @@ CSCI 0300 Project 1 - Snake
 ===========================
 
 ## Design Overview:
+To parse through a custom board dimension, I first interpreted the dimensions of the board
+by adding one each time to the address reference so that it would reference the memory of the
+bopard String minus the first value. I then used strtok to iterate through the delimeters.  
+- To interpret numbers, I used atoi
+
+I also made use of a doubly linked list to represent the logical
+locations of all my snakes
 
 ## Collaborators: William Park, Andrew Chen
 
@@ -23,6 +30,8 @@ in the recent update to use a system that is more familiar to them, rather than 
     * Ultimately, it is true that the perceived benefits from the homogeneity of the system actually snuffs out the cultural distinctions that make the region so diverse. However, the question begs if there are alternative representations that would reflect the modernity that you emphasized.
 
 ## Extra Credit attempted:
+Custom board:
+Nelson Center Lecture Hall: "B10x20|W20|W1E18W1|W1E18W1|W8E2W1E3W6|W1E4W1E4W1E8W1|W1E1W2E1W1E4W1E8W1|W1E4W8E2W1E3W1|W1E1S1E12W1E3W1|W1E14W1E3W1|W20" 
 
 ## How long did it take to complete Snake?: 30
 
