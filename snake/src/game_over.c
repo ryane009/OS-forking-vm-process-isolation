@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "game_setup.h"
+#include "common.h"
 
 #define BOARD_OFFSET_X 0
 #define BOARD_OFFSET_Y 2
