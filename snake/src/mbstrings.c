@@ -1,5 +1,6 @@
 #include "mbstrings.h"
-#define MASKONE 0b1000000  
+#define MASKONE 0b10000000  
+#define MASKTWO 0b11100000
 #define TWO 0b11000000       
 #define THREE 0b11100000        
 #define FOUR 0b11110000 
@@ -35,7 +36,7 @@ size_t mbslen(const char* bytes) {
             code_points++;
             bytes++;
         }
-        else if((*bytes & MASK) == TWO){
+        else if((*bytes & MASKTWO) == TWO){
             code_points++;
             bytes += 2;
         }
@@ -47,9 +48,9 @@ size_t mbslen(const char* bytes) {
             code_points++;
             bytes += 4;
         }
-        // else{
-        //     return -1;
-        // }
+        else{
+            return -1;
+        }
     }
     return code_points;
 }

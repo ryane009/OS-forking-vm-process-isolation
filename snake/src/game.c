@@ -191,15 +191,16 @@ void place_food(int* cells, size_t width, size_t height) {
 void read_name(char* write_into) {
     // TODO: implement! (remove the call to strcpy once you begin your
     // implementation)
-    
+    int status;
     int val = 0;
     while(val == 0){
         printf("Name > ");
         fflush(stdout);
-        int status = read(0, write_into, 1000);
+        status = read(0, write_into, 1000);
         write_into[status - 1] = '\0';
         if(strlen(write_into) != 0){
             val = 1;
+            return;
         }
         else{
             printf("Name Invalid: must be longer than 0 characters\n");
@@ -219,7 +220,7 @@ void teardown(int* cells, snake_t* snake_p) {
     free(cells);
     // free(snake_p);
     // TODO: implement!
-    for(int i = 0; i < length_list(snake_p->snake_cells); i++){
-        free(remove_first(&(snake_p->snake_cells)));
-    }
+    while(snake_p->snake_cells)
+        free(remove_first(&snake_p->snake_cells));
+    
 }
