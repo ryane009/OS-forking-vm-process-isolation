@@ -230,21 +230,20 @@ void reverse(node_t** head_list) {
  *
  */
 void* remove_first(node_t** head_list) {
-  if (!(*head_list)) {
+    if (!(*head_list)) {
     return NULL;
-  }
-  node_t* curr = *head_list;
-  *head_list = (*head_list)->next;
+    }
+    node_t* curr = *head_list;
+    *head_list = (*head_list)->next;
 
-  if (*head_list) {
+    if (*head_list) {
     (*head_list)->prev = NULL;
-  }
+    }
 
-  void* data = curr->data;
+    void* data = curr->data;
+    free(curr);
 
-  free(curr);
-
-  return data;
+    return data;
 }
 
 /** TODO: implement this!

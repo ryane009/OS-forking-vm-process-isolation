@@ -57,45 +57,51 @@ void updateDirection(enum input_key input, snake_t* snake){
 }
 
 void updateBoard(int* cells, size_t width, size_t height, int new_cell, snake_t* snake, int growing){
-    if(cells[new_cell] == FLAG_WALL){
-        g_game_over = 1;
+    if(g_game_over == 1){
+        return;
     }
     else{
-        node_t* nodes = snake->snake_cells;
-        if(new_cell == FLAG_FOOD){
-            cells[(int) new_cell] = FLAG_PLAIN_CELL;
-            g_score ++;
-            place_food(cells, width, height);
-            while(nodes){
-                if(cells[*((int*)nodes->data)] == FLAG_FOOD){
-                    place_food(cells, width, height);
-                }
-                if(nodes->next){
-                    nodes = nodes->next;
-                }
-            }
+        if(cells[new_cell] == FLAG_WALL || (cells[new_cell] == FLAG_SNAKE && new_cell != *((int*)get_last(snake->snake_cells)))){
+            g_game_over = 1;
+            return;
         }
-        int* ptr = &new_cell;
-        insert_first(&snake->snake_cells, ptr, sizeof(int));
-        cells[new_cell] = FLAG_SNAKE;
-        
-        if(growing == 0){
-            int remove_cell = *((int*)remove_last(&snake->snake_cells));
-            cells[remove_cell] = FLAG_PLAIN_CELL;
+        else{
+            // node_t* nodes = snake->snake_cells;
+            if(cells[new_cell] == FLAG_FOOD){
+                cells[new_cell] = FLAG_PLAIN_CELL;
+                g_score ++;
+                // for(int i = 0; i < length_list(snake->snake_cells); i++){
+                //     if(cells[*((int*)get(snake->snake_cells, i))] == FLAG_FOOD){
+                //         cells[*((int*)get(snake->snake_cells, i))] = FLAG_SNAKE;
+                //         place_food(cells, width, height);
+                //     }
+                // }
+                snake->length++;
+                if(growing == 0){
+                    void* data = get_last(snake->snake_cells);
+                    cells[*((int*)data)] = FLAG_PLAIN_CELL;
+                    free(remove_last(&snake->snake_cells));
+                }
+                
+                int* ptr = &new_cell;
+                insert_first(&snake->snake_cells, ptr, sizeof(int));
+                cells[new_cell] = FLAG_SNAKE;
+                place_food(cells, width, height);
+            }
+            else{
+                void* data = get_last(snake->snake_cells);
+                cells[*((int*)data)] = FLAG_PLAIN_CELL;
+                free(remove_last(&snake->snake_cells));
+
+                int* ptr = &new_cell;
+                insert_first(&snake->snake_cells, ptr, sizeof(int));
+                cells[new_cell] = FLAG_SNAKE;
+            }
         }
     }
 
 }
 
-// void updateBody(int*cells, node_t* body){
-//     int* front_ptr = (int*)body->prev->data;
-//     int* curr_ptr = (int*)body->data;
-//     int new_cell = *front_ptr;
-//     int curr_cell = *curr_ptr;
-//     cells[curr_cell] = FLAG_PLAIN_CELL;
-//     cells[new_cell] = FLAG_SNAKE;
-//     body->data = (void*)&new_cell;
-// }
 /** Updates the game by a single step, and modifies the game information
  * accordingly. Arguments:
  *  - cells: a pointer to the first integer in an array of integers representing
@@ -117,11 +123,15 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
     // walls, so it does not handle the case where a snake runs off the board.
 
     // TODO: implement!
+
+    if(g_game_over == 1){
+        return;
+    }
     
     updateDirection(input, snake_p);
 
 
-    int* ptr = (int*)snake_p->snake_cells->data;
+    int* ptr = (int*)get_first(snake_p->snake_cells);
     int first_cell = *ptr;
     //The index of the cell at the beginning of the list
 
@@ -153,7 +163,6 @@ void update(int* cells, size_t width, size_t height, snake_t* snake_p,
     //     }
     // }
     
-    snake_p->snake_cells->data = (void*)&first_cell;
     
 }
 
@@ -182,7 +191,21 @@ void place_food(int* cells, size_t width, size_t height) {
 void read_name(char* write_into) {
     // TODO: implement! (remove the call to strcpy once you begin your
     // implementation)
-    strcpy(write_into, "placeholder");
+    
+    int val = 0;
+    while(val == 0){
+        printf("Name > ");
+        fflush(stdout);
+        int status = read(0, write_into, 1000);
+        write_into[status - 1] = '\0';
+        if(strlen(write_into) != 0){
+            val = 1;
+        }
+        else{
+            printf("Name Invalid: must be longer than 0 characters\n");
+        }
+    }
+    //strcpy(write_into, "placeholder");
 }
 
 /** Cleans up on game over — should free any allocated memory so that the
@@ -196,4 +219,7 @@ void teardown(int* cells, snake_t* snake_p) {
     free(cells);
     // free(snake_p);
     // TODO: implement!
+    for(int i = 0; i < length_list(snake_p->snake_cells); i++){
+        free(remove_first(&(snake_p->snake_cells)));
+    }
 }

@@ -1,4 +1,9 @@
 #include "mbstrings.h"
+#define MASKONE 0b1000000  
+#define TWO 0b11000000       
+#define THREE 0b11100000        
+#define FOUR 0b11110000 
+#define MASK 0b11110000  
 
 /* mbslen - multi-byte string length
  * - Description: returns the number of UTF-8 code points ("characters")
@@ -24,5 +29,27 @@
  */
 size_t mbslen(const char* bytes) {
     // TODO: implement!
-    return 0;
+    int code_points = 0; 
+    while(*bytes != '\0'){
+        if((*bytes & MASKONE) == 0b00000000){ //one byte
+            code_points++;
+            bytes++;
+        }
+        else if((*bytes & MASK) == TWO){
+            code_points++;
+            bytes += 2;
+        }
+        else if((*bytes & MASK) == THREE){
+            code_points++;
+            bytes += 3;
+        }
+        else if((*bytes & MASK) == FOUR){
+            code_points++;
+            bytes += 4;
+        }
+        // else{
+        //     return -1;
+        // }
+    }
+    return code_points;
 }
