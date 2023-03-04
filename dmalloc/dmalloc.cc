@@ -26,7 +26,7 @@ void* dmalloc(size_t sz, const char* file, long line) {
     (void) file, (void) line;   // avoid uninitialized variable warnings
     // Your code here.
 
-    void* ptr = base_malloc(sizeof(meta_data) + sz);
+    void* ptr = base_malloc(sizeof(meta_data) + sz + 1000);
     if(long(ptr) < (long(ptr) - long(sz))){
         g_stats.nfail++;
         g_stats.fail_size += sz;
@@ -78,7 +78,7 @@ void dfree(void* ptr, const char* file, long line) {
         return;
     }    
 
-    if((uintptr_t)((char*)ptr) < g_stats.heap_max && (uintptr_t)((char*)ptr) > g_stats.heap_min){
+    if((uintptr_t)((char*)ptr) < g_stats.heap_max && (uintptr_t)((char*)ptr) >= g_stats.heap_min){
         if(active_map.count(ptr) == 1){
             if(active_map[ptr] == true){
                 meta_data* m_ptr = (meta_data*)((char*)ptr);
@@ -87,10 +87,6 @@ void dfree(void* ptr, const char* file, long line) {
                     fprintf(stderr, "MEMORY BUG: detected wild write during free of pointer %p\n",(char*)ptr);
                     abort();
                 }
-                // if((char*)(m_ptr + 1) + m_ptr->data_sz > ptr && (char*)(m_ptr + 1) < ptr){
-                //     fprintf(stderr, "%s:%d: is %d inside a %d byte region allocated here\n",(char*)m_ptr->file, (int) line, (int)((char*)ptr - ((char*)m_ptr + sizeof(meta_data))), (int) m_ptr->data_sz);
-                //     abort();
-                // }
                 g_stats.active_size -= m_ptr->data_sz;
                 g_stats.nactive--;
                 active_map[ptr] = false;
@@ -103,6 +99,12 @@ void dfree(void* ptr, const char* file, long line) {
         }
         else{
             fprintf(stderr, "MEMORY BUG: %s:%d: invalid free of pointer %p, not allocated\n", (char*) file, (int)line, (char*)ptr);
+            meta_data* m_ptr = (meta_data*)((char*)ptr);
+            m_ptr--;
+            // if((char*)(m_ptr + 1) + m_ptr->data_sz > ptr && (char*)(m_ptr + 1) < ptr){
+                //     fprintf(stderr, "%s:%d: is %d inside a %d byte region allocated here\n",(char*)m_ptr->file, (int) line, (int)((char*)ptr - ((char*)m_ptr + sizeof(meta_data))), (int) m_ptr->data_sz);
+                //     abort();
+                // }
             abort();
         }
     }
