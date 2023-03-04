@@ -49,7 +49,7 @@ void* dmalloc(size_t sz, const char* file, long line) {
 
     meta_data* m_ptr = (meta_data*)ptr;
     char* secret = (char*) (m_ptr + 1) + sz;
-    *secret = '\a';
+    *secret = 'a';
 
     m_ptr->data_sz = sz;
     m_ptr->file = file;
@@ -83,7 +83,7 @@ void dfree(void* ptr, const char* file, long line) {
             if(active_map[ptr] == true){
                 meta_data* m_ptr = (meta_data*)((char*)ptr);
                 m_ptr--;
-                if(*((char*)(ptr) + m_ptr->data_sz) != '\a'){
+                if(*((char*)(ptr) + m_ptr->data_sz) != 'a'){
                     fprintf(stderr, "MEMORY BUG: detected wild write during free of pointer %p\n",(char*)ptr);
                     abort();
                 }
