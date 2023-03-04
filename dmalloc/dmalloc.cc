@@ -87,12 +87,14 @@ void dfree(void* ptr, const char* file, long line) {
                     fprintf(stderr, "MEMORY BUG: detected wild write during free of pointer %p\n",(char*)ptr);
                     abort();
                 }
+                // if((char*)(m_ptr + 1) + m_ptr->data_sz > ptr && (char*)(m_ptr + 1) < ptr){
+                //     fprintf(stderr, "%s:%d: is %d inside a %d byte region allocated here\n",(char*)m_ptr->file, (int) line, (int)((char*)ptr - ((char*)m_ptr + sizeof(meta_data))), (int) m_ptr->data_sz);
+                //     abort();
+                // }
                 g_stats.active_size -= m_ptr->data_sz;
                 g_stats.nactive--;
                 active_map[ptr] = false;
-                // Your code here.
                 base_free(ptr); 
-                base_free(m_ptr);
             }
             else{
                 fprintf(stderr, "MEMORY BUG: %s:%d: invalid free of pointer %p, double free\n", (char*) file, (int)line, (char*)ptr);
@@ -191,7 +193,7 @@ void print_statistics() {
  *      memory.
  */
 void print_leak_report() {
-    for (const auto& kv : active_map) {
+    for (const auto kv : active_map) {
         if (kv.second) {
             void* ptr = kv.first;
             meta_data* m_ptr = (meta_data*)((char*)ptr);
