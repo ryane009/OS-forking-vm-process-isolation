@@ -91,6 +91,7 @@ void dfree(void* ptr, const char* file, long line) {
                 g_stats.nactive--;
                 active_map[ptr] = false;
                 base_free(ptr); 
+                base_free(m_ptr);
             }
             else{
                 fprintf(stderr, "MEMORY BUG: %s:%d: invalid free of pointer %p, double free\n", (char*) file, (int)line, (char*)ptr);
@@ -103,7 +104,6 @@ void dfree(void* ptr, const char* file, long line) {
             m_ptr--;
             // if((char*)(m_ptr + 1) + m_ptr->data_sz > ptr && (char*)(m_ptr + 1) < ptr){
                 //     fprintf(stderr, "%s:%d: is %d inside a %d byte region allocated here\n",(char*)m_ptr->file, (int) line, (int)((char*)ptr - ((char*)m_ptr + sizeof(meta_data))), (int) m_ptr->data_sz);
-                //     abort();
                 // }
             abort();
         }
