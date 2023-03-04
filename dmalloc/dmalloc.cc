@@ -2,6 +2,14 @@
 #include "dmalloc.hh"
 #include <cassert>
 #include <cstring>
+#include <unordered_map>
+#include <iostream>
+#include <iterator>
+
+
+struct dmalloc_stats g_stats = {0,0,0,0,0,0,SIZE_MAX,0};
+
+std::unordered_map<void*, bool> active_map;
 
 /**
  * dmalloc(sz,file,line)
@@ -17,7 +25,41 @@
 void* dmalloc(size_t sz, const char* file, long line) {
     (void) file, (void) line;   // avoid uninitialized variable warnings
     // Your code here.
-    return base_malloc(sz);
+
+    void* ptr = base_malloc(sizeof(meta_data) + sz);
+    if(long(ptr) < (long(ptr) - long(sz))){
+        g_stats.nfail++;
+        g_stats.fail_size += sz;
+        return nullptr;
+    }
+    if(ptr == nullptr){
+        g_stats.fail_size += sz;
+        g_stats.nfail++;
+        return nullptr;
+    }
+
+    
+    if(((uintptr_t) ((char*) (ptr) + sz)) > g_stats.heap_max){
+        g_stats.heap_max = (uintptr_t) ((char*) (ptr) + sz + sizeof(meta_data));
+    }
+
+    if((uintptr_t) ptr <= g_stats.heap_min){
+        g_stats.heap_min = (uintptr_t) ptr;
+    }
+
+    meta_data* m_ptr = (meta_data*)ptr;
+    char* secret = (char*) (m_ptr + 1) + sz;
+    *secret = '\a';
+
+    m_ptr->data_sz = sz;
+    m_ptr->file = file;
+    m_ptr->line = line;
+    active_map[m_ptr + 1] = true;
+    g_stats.nactive++;
+    g_stats.ntotal++;
+    g_stats.total_size += (int) sz;
+    g_stats.active_size += (int) sz;
+    return (m_ptr + 1);
 }
 
 /**
@@ -31,8 +73,55 @@ void* dmalloc(size_t sz, const char* file, long line) {
  */
 void dfree(void* ptr, const char* file, long line) {
     (void) file, (void) line;   // avoid uninitialized variable warnings
-    // Your code here.
-    base_free(ptr);
+
+    if(ptr == nullptr){
+        return;
+    }    
+
+    if((uintptr_t)((char*)ptr) < g_stats.heap_max && (uintptr_t)((char*)ptr) > g_stats.heap_min){
+        if(active_map.count(ptr) == 1){
+            if(active_map[ptr] == true){
+                meta_data* m_ptr = (meta_data*)((char*)ptr);
+                m_ptr--;
+                if(*((char*)(ptr) + m_ptr->data_sz) != '\a'){
+                    fprintf(stderr, "MEMORY BUG: detected wild write during free of pointer %p\n",(char*)ptr);
+                    abort();
+                }
+                g_stats.active_size -= m_ptr->data_sz;
+                g_stats.nactive--;
+                active_map[ptr] = false;
+                // Your code here.
+                base_free(ptr); 
+                base_free(m_ptr);
+            }
+            else{
+                fprintf(stderr, "MEMORY BUG: %s:%d: invalid free of pointer %p, double free\n", (char*) file, (int)line, (char*)ptr);
+                abort();
+            }
+        }
+        else{
+            fprintf(stderr, "MEMORY BUG: %s:%d: invalid free of pointer %p, not allocated\n", (char*) file, (int)line, (char*)ptr);
+            abort();
+        }
+    }
+    else{
+        fprintf(stderr, "MEMORY BUG: %s:%d: invalid free of pointer %p, not in heap\n", (char*) file, (int)line, (char*)ptr);
+        abort();
+    }
+
+
+
+    // if(m_ptr->status == EMPTY){
+    //     fprintf(stderr, "MEMORY BUG: %s:%s invalid free of pointer %p, not allocated/n", (char*) file, (char*)line, ptr);
+    //     abort();
+    //     return;
+    // }
+
+    // else if(m_ptr == nullptr){
+    //     fprintf(stderr, "MEMORY BUG: %s:%s invalid free of pointer %p, not in heap/n", (char*) file, (char*)line, ptr);
+    //     abort();
+    //     return;
+    // }
 }
 
 /**
@@ -50,6 +139,11 @@ void dfree(void* ptr, const char* file, long line) {
  */
 void* dcalloc(size_t nmemb, size_t sz, const char* file, long line) {
     // Your code here (to fix test014).
+    if (nmemb > SIZE_MAX / sz) {
+        g_stats.nfail++;
+        g_stats.fail_size += sz;
+        return nullptr;
+    }
     void* ptr = dmalloc(nmemb * sz, file, line);
     if (ptr) {
         memset(ptr, 0, nmemb * sz);
@@ -65,8 +159,16 @@ void* dcalloc(size_t nmemb, size_t sz, const char* file, long line) {
  */
 void get_statistics(dmalloc_stats* stats) {
     // Stub: set all statistics to enormous numbers
-    memset(stats, 255, sizeof(dmalloc_stats));
+    memset(stats, 255, sizeof(*stats));
     // Your code here.
+    stats->nactive = g_stats.nactive;
+    stats->active_size = g_stats.active_size;
+    stats->ntotal = g_stats.ntotal;
+    stats->total_size = g_stats.total_size;    
+    stats->nfail = g_stats.nfail;       
+    stats->fail_size = g_stats.fail_size;
+    stats->heap_min = g_stats.heap_min;
+    stats->heap_max = g_stats.heap_max;       
 }
 
 /**
@@ -89,5 +191,13 @@ void print_statistics() {
  *      memory.
  */
 void print_leak_report() {
-    // Your code here.
+    for (const auto& kv : active_map) {
+        if (kv.second) {
+            void* ptr = kv.first;
+            meta_data* m_ptr = (meta_data*)((char*)ptr);
+            m_ptr--;
+            printf("LEAK CHECK: %s:%d: allocated object %p with size %d\n", m_ptr->file, m_ptr->line, ptr, (int)m_ptr->data_sz);
+        }
+    }   
+
 }
