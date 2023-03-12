@@ -220,7 +220,8 @@ void teardown(int* cells, snake_t* snake_p) {
     free(cells);
     // free(snake_p);
     // TODO: implement!
-    while(snake_p->snake_cells)
+    while(snake_p->snake_cells){
         free(remove_first(&snake_p->snake_cells));
+    }
     
 }
