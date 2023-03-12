@@ -152,6 +152,6 @@ int main(int argc, char** argv) {
         update(cells, width, height, &snake, get_input(), snake_grows);
         render_game(cells, width, height);
     }
-    end_game(cells, width, height, &snake);
+    end_game(&cells, width, height, &snake);
 
 }
