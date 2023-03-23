@@ -251,7 +251,7 @@ int io300_writec(struct io300_file *f, int ch) {
             f->changed = 0;
         }
         f->cache[f->offset % CACHE_SIZE] = c;
-        f->min += CACHE_SIZE;
+        f->min = f->offset;
         f->changed = 1;
     }
     f->stats.write_calls++;
@@ -316,7 +316,7 @@ ssize_t io300_write(struct io300_file *const f, const char *buff, size_t const s
     int size = (int) sz;
 
     if(f->min + CACHE_SIZE > f->offset + size){
-        memcpy(f->cache + f->offset % CACHE_SIZE, buff, size);
+        memcpy(f->cache + (f->offset - f->min), buff, size);
         f->valid_bytes += size;
         f->offset += size;
         lseek(f->fd, f->offset, SEEK_SET);
@@ -328,7 +328,7 @@ ssize_t io300_write(struct io300_file *const f, const char *buff, size_t const s
         }
         write(f->fd, buff, size);
         f->offset += size;
-        f->min = f->offset - (f->offset % CACHE_SIZE);
+        f->min = f->offset;
     }
     f->changed = 1;
     f->stats.write_calls++;
