@@ -22,7 +22,7 @@
     When starting, you might want to change this for testing on small files.
 */
 #ifndef CACHE_SIZE
-#define CACHE_SIZE 8
+#define CACHE_SIZE 4096
 #endif
 
 #if(CACHE_SIZE < 4)
@@ -199,13 +199,6 @@ int io300_readc(struct io300_file *const f) {
     if(f->offset == f->size){
         return -1;
     }
-
-    // if(f->offset < f->min + CACHE_SIZE){
-    //     c = f->cache[f->offset % CACHE_SIZE];
-    //     // CHARACTER IS ONLY LENGTH 1, SO YOU ONLY WANT TO ASSIGN TO INDEX 0 
-    // }
-    //(f->offset % CACHE_SIZE) + 1 <= CACHE_SIZE && f->offset!= CACHE_SIZE
-    //CACHE_SIZE - (CACHE_SIZE - (f->offset % 8)) > 0
     if(f->offset >= f->min + CACHE_SIZE || f->offset < f->min){
         f->min = f->offset - (f->offset % CACHE_SIZE);
         if(f->size - f->min < CACHE_SIZE){
@@ -237,12 +230,10 @@ int io300_readc(struct io300_file *const f) {
 
 int io300_writec(struct io300_file *f, int ch) {
     char const c = (char)ch;
-    //return write(f->fd, &c, 1) == 1 ? ch : -1;
 
     if(f->min + CACHE_SIZE > f->offset){
         f->cache[f->offset % CACHE_SIZE] = c;
         f->changed = 1;
-        // CHARACTER IS ONLY LENGTH 1, SO YOU ONLY WANT TO ASSIGN TO INDEX 0 
     }
     else{
         if(f->changed == 1){
@@ -260,24 +251,9 @@ int io300_writec(struct io300_file *f, int ch) {
     return (unsigned char) c;
 }
 
-        // if(f->size - f->offset < CACHE_SIZE){
-        //     read(f->fd, f->cache, f->size - f->offset);
-        //     f->valid_bytes = f->size - f->offset;
-        //     f->cache[0] = c;
-        //     f->offset++;
-        //     f->min += CACHE_SIZE;
-            
-        // }
-        // else{
-        //     read(f->fd, f->cache, CACHE_SIZE);
-        //     f->cache[0] = c;
-        //     f->valid_bytes = CACHE_SIZE;
-        //     f->offset++;
-        //     f->min += CACHE_SIZE;
-        // }
+    
 
 ssize_t io300_read(struct io300_file *const f, char *const buff, size_t const sz) {
-    //return read(f->fd, buff, sz);
 
     //end of file exception
     if(f->offset == f->size){
@@ -305,7 +281,6 @@ ssize_t io300_read(struct io300_file *const f, char *const buff, size_t const sz
     else {
         memcpy(buff, f->cache+ f->offset % CACHE_SIZE, size);
         f->offset+=size;
-        lseek(f->fd, f->offset, SEEK_SET);
     }
     f->stats.read_calls++;
     return size;
@@ -319,7 +294,6 @@ ssize_t io300_write(struct io300_file *const f, const char *buff, size_t const s
         memcpy(f->cache + (f->offset - f->min), buff, size);
         f->valid_bytes += size;
         f->offset += size;
-        lseek(f->fd, f->offset, SEEK_SET);
     }
     else{
         if(f->changed == 1){
@@ -333,62 +307,9 @@ ssize_t io300_write(struct io300_file *const f, const char *buff, size_t const s
     f->changed = 1;
     f->stats.write_calls++;
     return size;
-
-    // if(f->min + CACHE_SIZE > f->offset - 1 + size){
-    //     // CHARACTER IS ONLY LENGTH 1, SO YOU ONLY WANT TO ASSIGN TO INDEX 0 
-    //     memcpy((void*)buff, f->cache + (f->offset - f->min), size);
-    //     f->offset+= size;
-    //     f->valid_bytes = f->offset % CACHE_SIZE;
-    // }
-    // else{
-    //     write(f->fd, buff, sz);
-    //     f->offset += size;
-    //     f->min += size;
-    //     if(f->size - f->offset < CACHE_SIZE){
-    //         read(f->fd, f->cache, f->size - f->offset);
-    //         //lseek(f->fd, f->offset, SEEK_SET);
-    //         f->valid_bytes = f->size - f->offset;
-    //     }
-    //     else{
-    //         read(f->fd, f->cache, CACHE_SIZE);
-    //         //lseek(f->fd, f->offset, SEEK_SET);
-    //         f->valid_bytes = CACHE_SIZE;
-    //     }
-    
-
-    //my implementation
-    // check_invariants(f);
-    // // TODO: Implement this
-    // int size = (int) sz;
-    // while(size > 0){
-    //     if(f->offset == f->min + CACHE_SIZE){
-    //         io300_flush(f);
-    //         f->min += CACHE_SIZE;
-    //     }
-
-    //     if(f->offset + size <= CACHE_SIZE - f->offset % 8){
-    //         int remaining = size;
-    //         for(int i = f->offset; i < remaining; i++){
-    //             f->cache[f->offset % 8] = buff[size];
-    //             size--;
-    //         }
-    //         f->offset += remaining;
-    //     }
-    //     else{
-    //         for(int i = f->offset; i < f->min + CACHE_SIZE; i++){
-    //             f->cache[f->offset % CACHE_SIZE + i] = buff[sz - size];
-    //             f->offset++;
-    //             size--;
-    //         }
-    //     }
-    // }
-    // f->stats.write_calls++;
-    // return sz;
 }
 
 int io300_flush(struct io300_file *const f) {
-    // (void)f;
-    // return 0;
     check_invariants(f);
     lseek(f->fd, f->min, SEEK_SET);
     write(f->fd, f->cache, f->valid_bytes);
