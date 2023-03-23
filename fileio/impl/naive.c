@@ -67,6 +67,7 @@ int io300_readc(struct io300_file *f) {
         return -1;
     }
 }
+
 int io300_writec(struct io300_file *f, int ch) {
     char const c = (char)ch;
     return write(f->fd, &c, 1) == 1 ? ch : -1;

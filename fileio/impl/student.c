@@ -154,6 +154,7 @@ struct io300_file *io300_open(const char *const path, char *description) {
 int io300_seek(struct io300_file *const f, off_t const pos) {
     //return lseek(f->fd, pos, SEEK_SET);
     //my implementation
+    //return lseek(f->fd, pos, SEEK_SET);
     check_invariants(f);
     if(pos > f->size || pos < 0){
         return -1;
@@ -233,6 +234,7 @@ int io300_writec(struct io300_file *f, int ch) {
 
     if(f->min + CACHE_SIZE > f->offset){
         f->cache[f->offset % CACHE_SIZE] = c;
+        f->valid_bytes = f->offset - f->min;
         f->changed = 1;
     }
     else{
@@ -246,7 +248,7 @@ int io300_writec(struct io300_file *f, int ch) {
         f->changed = 1;
     }
     f->stats.write_calls++;
-    f->valid_bytes++;
+    //f->valid_bytes++;
     f->offset++;
     return (unsigned char) c;
 }
