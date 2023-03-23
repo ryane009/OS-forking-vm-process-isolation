@@ -248,7 +248,7 @@ int io300_writec(struct io300_file *f, int ch) {
         f->changed = 1;
     }
     f->stats.write_calls++;
-    //f->valid_bytes++;
+    f->valid_bytes++;
     f->offset++;
     return (unsigned char) c;
 }
