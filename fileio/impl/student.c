@@ -75,7 +75,6 @@ struct io300_file {
 */
 static void check_invariants(struct io300_file *f) {
     assert(f != NULL);
-    assert(f->cache != NULL);
     assert(f->fd >= 0);
     assert(f->min >= 0);
     assert(f->offset >= 0);
@@ -143,30 +142,25 @@ struct io300_file *io300_open(const char *const path, char *description) {
 
     //loading size into metadat so onyl have to use filesize once
     ret->size = (int) io300_filesize(ret);
-    if(ret->size < CACHE_SIZE){
-        read(ret->fd, ret->cache + ret->offset, ret->size);
-        ret->valid_bytes = ret->size;
-        ret->stats.read_calls++;
-    }
-    else{
-        read(ret->fd, ret->cache + ret->offset, CACHE_SIZE);
-        ret->valid_bytes = CACHE_SIZE;
-        ret->stats.read_calls++;
-    }
+    
+    ret->valid_bytes = pread(ret->fd, ret->cache + ret->offset, CACHE_SIZE - (ret->offset % CACHE_SIZE), ret->offset);
+    ret->stats.read_calls++;
+    
     check_invariants(ret);
     dbg(ret, "Just finished initializing file from path: %s\n", path);
     return ret;
 }
 
 int io300_seek(struct io300_file *const f, off_t const pos) {
-    return lseek(f->fd, pos, SEEK_SET);
+    //return lseek(f->fd, pos, SEEK_SET);
     //my implementation
-    // check_invariants(f);
+    check_invariants(f);
+    if(pos > f->size || pos < 0){
+        return -1;
+    }
     f->stats.seeks++;
     f->offset = pos;
     return pos;
-    // // TODO: Implement this
-    // return lseek(f->fd, pos, SEEK_SET);
 }
 
 int io300_close(struct io300_file *const f) {
@@ -177,7 +171,9 @@ int io300_close(struct io300_file *const f) {
             f->description, f->stats.read_calls, f->stats.write_calls, f->stats.seeks);
 #endif
     // TODO: Implement this
-    io300_flush(f);
+    if(f->changed == 1){
+        io300_flush(f);
+    }
     close(f->fd);
     free(f->cache);
     free(f);
@@ -196,46 +192,57 @@ off_t io300_filesize(struct io300_file *const f) {
 }
 
 int io300_readc(struct io300_file *const f) {
-    check_invariants(f);
     unsigned char c;
-    if(f->offset + 1 > f->size){
+
+    check_invariants(f);
+    
+    if(f->offset == f->size){
         return -1;
     }
+
+    // if(f->offset < f->min + CACHE_SIZE){
+    //     c = f->cache[f->offset % CACHE_SIZE];
+    //     // CHARACTER IS ONLY LENGTH 1, SO YOU ONLY WANT TO ASSIGN TO INDEX 0 
+    // }
     //(f->offset % CACHE_SIZE) + 1 <= CACHE_SIZE && f->offset!= CACHE_SIZE
     //CACHE_SIZE - (CACHE_SIZE - (f->offset % 8)) > 0
-    if(f->min + CACHE_SIZE > f->offset){
+    if(f->offset >= f->min + CACHE_SIZE || f->offset < f->min){
+        f->min = f->offset - (f->offset % CACHE_SIZE);
+        if(f->size - f->min < CACHE_SIZE){
+            pread(f->fd, f->cache, f->size - f->min, f->min);
+            f->min += CACHE_SIZE;
+            f->valid_bytes = f->size - f->min;
+            c = f->cache[0];
+        }
+        else{
+            pread(f->fd, f->cache, CACHE_SIZE, f->min);
+            c = f->cache[f->offset % CACHE_SIZE];
+        }
+    }
+    else{  
         c = f->cache[f->offset % CACHE_SIZE];
         // CHARACTER IS ONLY LENGTH 1, SO YOU ONLY WANT TO ASSIGN TO INDEX 0 
-        f->offset++;
     }
-    else if(f->size - f->offset < CACHE_SIZE){
-        read(f->fd, f->cache, f->size - f->offset);
-        f->valid_bytes = f->size - f->offset;
-        f->stats.read_calls++;
-        c = f->cache[0];
-        f->offset++;
-        f->min += CACHE_SIZE;
-    }
-    else{
-        read(f->fd, f->cache, CACHE_SIZE);
-        f->stats.read_calls++;
-        f->valid_bytes = CACHE_SIZE;
-        c = f->cache[0];
-        f->offset++;
-        f->min += CACHE_SIZE;
-    }
+    // else{
+    //     pread(f->fd, f->cache, CACHE_SIZE, f->offset);
+    //     f->valid_bytes = CACHE_SIZE;
+    //     c = f->cache[0];
+    //     f->min += CACHE_SIZE;
+    // }
+    f->stats.read_calls++;
+    f->offset++;
+    f->changed = 0;
     return (unsigned char) c;
-
 }
+
 int io300_writec(struct io300_file *f, int ch) {
     char const c = (char)ch;
-    // return write(f->fd, &c, 1) == 1 ? ch : -1;
+    //return write(f->fd, &c, 1) == 1 ? ch : -1;
 
     if(f->min + CACHE_SIZE > f->offset){
         f->cache[f->offset % CACHE_SIZE] = c;
+        f->changed = 1;
         // CHARACTER IS ONLY LENGTH 1, SO YOU ONLY WANT TO ASSIGN TO INDEX 0 
-        f->offset++;
-        f->valid_bytes = f->offset % CACHE_SIZE;
     }
     else{
         if(f->changed == 1){
@@ -244,8 +251,15 @@ int io300_writec(struct io300_file *f, int ch) {
             f->changed = 0;
         }
         f->cache[f->offset % CACHE_SIZE] = c;
-        f->offset++;
         f->min += CACHE_SIZE;
+        f->changed = 1;
+    }
+    f->stats.write_calls++;
+    f->valid_bytes++;
+    f->offset++;
+    return (unsigned char) c;
+}
+
         // if(f->size - f->offset < CACHE_SIZE){
         //     read(f->fd, f->cache, f->size - f->offset);
         //     f->valid_bytes = f->size - f->offset;
@@ -261,86 +275,87 @@ int io300_writec(struct io300_file *f, int ch) {
         //     f->offset++;
         //     f->min += CACHE_SIZE;
         // }
+
+ssize_t io300_read(struct io300_file *const f, char *const buff, size_t const sz) {
+    //return read(f->fd, buff, sz);
+
+    //end of file exception
+    if(f->offset == f->size){
+        return 0;
+    }
+
+    if(f->offset > f->size){
+        return -1;
+    }
+    int size = (int) sz;
+    if (f->offset + (int)sz > f->size)
+    {
+        size = f->size - f->offset;
+    }
+
+    //when offset is changed by seek, load new cache
+    if(f->offset + size > f->min + CACHE_SIZE || f->offset < f->min){
+        lseek(f->fd, f->offset, SEEK_SET);
+        read(f->fd, buff, size);
+        f->offset += size;
+        f->min = f->offset - (f->offset % CACHE_SIZE);
+        lseek(f->fd, f->min, SEEK_SET);
+        f->valid_bytes = read(f->fd, f->cache, CACHE_SIZE);
+    }
+    else {
+        memcpy(buff, f->cache+ f->offset % CACHE_SIZE, size);
+        f->offset+=size;
+        lseek(f->fd, f->offset, SEEK_SET);
+    }
+    f->stats.read_calls++;
+    return size;
+}
+
+ssize_t io300_write(struct io300_file *const f, const char *buff, size_t const sz) {
+    //return write(f->fd, buff, sz);
+    int size = (int) sz;
+
+    if(f->min + CACHE_SIZE > f->offset + size){
+        memcpy(f->cache + f->offset % CACHE_SIZE, buff, size);
+        f->valid_bytes += size;
+        f->offset += size;
+        lseek(f->fd, f->offset, SEEK_SET);
+    }
+    else{
+        if(f->changed == 1){
+            io300_flush(f);
+            f->changed = 0;
+        }
+        write(f->fd, buff, size);
+        f->offset += size;
+        f->min = f->offset - (f->offset % CACHE_SIZE);
     }
     f->changed = 1;
     f->stats.write_calls++;
-    return (unsigned char) c;
-}
+    return size;
 
-ssize_t io300_read(struct io300_file *const f, char *const buff, size_t const sz) {
-    return read(f->fd, buff, sz);
-    //new IMPLEMENTATION
-    // if(f->offset + (int) sz > f->size){
-    //     return -1;
-    // }
-
-    // //if the number of bytes we want to read fits within the remaining pre-read cache slots
-    // //f->min + CACHE_SIZE > f->offset
-    // if(f->min + CACHE_SIZE > f->offset){
-    //     memcpy(buff, f->cache + (f->offset % CACHE_SIZE), sz);
+    // if(f->min + CACHE_SIZE > f->offset - 1 + size){
     //     // CHARACTER IS ONLY LENGTH 1, SO YOU ONLY WANT TO ASSIGN TO INDEX 0 
-    //     // *buff = f->cache[f->offset];
-    //     f->offset += sz;
+    //     memcpy((void*)buff, f->cache + (f->offset - f->min), size);
+    //     f->offset+= size;
+    //     f->valid_bytes = f->offset % CACHE_SIZE;
     // }
-    // //if we'll need to rewrite our cache at least once to read data
     // else{
-    //     char* str[sz];
-    //     memcpy(buff, f->fd, sz);
-    // }
-}
-        
-    //     int num_bytes = sz;
-    //     while(num_bytes > 0){
-    //                     //TODO: If we're at end of reading bytes
-    //         if(f->min + CACHE_SIZE > f->offset + num_bytes){
-    //             //if we have enough bytes left in the file to fill up the cache completely
-    //             if(f->size > f->offset + num_bytes && f->size - f->min >= CACHE_SIZE){
-    //                 //pre-reading for subsequent io300 read calls
-    //                 read(f->fd, f->cache, CACHE_SIZE);
-    //                 f->offset += num_bytes;
-    //                 f->min += CACHE_SIZE;
-    //             }
-    //             //if we've reached the end of our file and there
-    //             //aren't enough bytes to fill up the cache 
-    //             //(don't have to worry about sz going over file size as we've accounted for that earlier)
-    //             //f->size can still have more bytes than remaining bytes to read (eg there are 5 bytes left in the file
-    //             //and we can read up to 8 bytes into the cache but we only need to read 3, we want to read 5)
-    //             //however f->size can also be equal to the number of remaining bytes to read, but either way we want to load
-    //             //into the cache the number of bytes left in the file
-    //             else{
-    //                 //we want to read as much as we can, but we don't have enough bytes left in the file
-    //                 //to fill the cache
-    //                 read(f->fd, f->cache, f->size - f->min);
-    //                 f->end_file = 1;
-    //             }
-    //             memcpy(buff + f->offset, f->cache, (size_t)num_bytes);
-    //             f->offset += num_bytes;
-    //             num_bytes = 0;
-    //         }
-
-    //         //this occurs when we already have preloaded data (as the cache will always be filled to the max), and we'll want
-    //         //to go to the end of it
-    //         if((f->offset % CACHE_SIZE) != 0){
-    //             //read(f->fd, f->cache + (f->offset % CACHE_SIZE), (size_t)CACHE_SIZE - (f->offset % CACHE_SIZE));
-    //             memcpy(buff + f->offset, f->cache + (f->offset % CACHE_SIZE), CACHE_SIZE - (f->offset % CACHE_SIZE));
-    //             num_bytes -= (CACHE_SIZE - (f->offset % CACHE_SIZE));
-    //             f->offset += CACHE_SIZE - (f->offset % CACHE_SIZE);
-    //             f->min += CACHE_SIZE;
-    //         }
-
-    //         //we want to fill up the cache completely with new values as a previous call reached the end
-    //         if(num_bytes >= CACHE_SIZE && (f->offset % CACHE_SIZE) == 0){
-    //             read(f->fd, f->cache, CACHE_SIZE);
-    //             memcpy(buff + f->offset, f->cache, CACHE_SIZE);
-    //             num_bytes -= CACHE_SIZE;
-    //             f->offset += CACHE_SIZE;
-    //             f->min += CACHE_SIZE;
-    //         }
+    //     write(f->fd, buff, sz);
+    //     f->offset += size;
+    //     f->min += size;
+    //     if(f->size - f->offset < CACHE_SIZE){
+    //         read(f->fd, f->cache, f->size - f->offset);
+    //         //lseek(f->fd, f->offset, SEEK_SET);
+    //         f->valid_bytes = f->size - f->offset;
     //     }
-    // }
+    //     else{
+    //         read(f->fd, f->cache, CACHE_SIZE);
+    //         //lseek(f->fd, f->offset, SEEK_SET);
+    //         f->valid_bytes = CACHE_SIZE;
+    //     }
+    
 
-ssize_t io300_write(struct io300_file *const f, const char *buff, size_t const sz) {
-    return write(f->fd, buff, sz);
     //my implementation
     // check_invariants(f);
     // // TODO: Implement this
@@ -374,19 +389,9 @@ ssize_t io300_write(struct io300_file *const f, const char *buff, size_t const s
 int io300_flush(struct io300_file *const f) {
     // (void)f;
     // return 0;
-
     check_invariants(f);
     lseek(f->fd, f->min, SEEK_SET);
     write(f->fd, f->cache, f->valid_bytes);
+    f->valid_bytes = 0;
     return 0;
-
-    //my implentation
-    // check_invariants(f);
-    // //maybe not fd
-    // write(f->fd, f->cache, CACHE_SIZE);
-    // for(int i = 0; i < CACHE_SIZE; i++){
-    //     f->cache[i] = '\0';
-    // }
-    // // TODO: Implement this
-    // return 0;
 }
