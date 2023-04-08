@@ -185,10 +185,8 @@ void process_setup(pid_t pid, const char* program_name) {
         for (uintptr_t a = round_down(loader.va(), PAGESIZE);
              a < loader.va() + loader.size();
              a += PAGESIZE) {
-                vmiter it(kernel_pagetable, a);
-                if(it.present() && it.writable()){
-                    vmiter(ptable[pid].pagetable, it.va()).map(it.pa(), it.perm());
-                }
+                uint64_t phys_addr = (uint64_t) kalloc(PAGESIZE);
+                vmiter(ptable[pid].pagetable, a).map(phys_addr, PTE_P | (PTE_W * loader.writable()) | PTE_U);
             // `a` is the virtual address of the current segment's page.
             //assert(!pages[a / PAGESIZE].used());
             // Read the description on the `pages` array if you're confused about what it is.
@@ -197,35 +195,33 @@ void process_setup(pid_t pid, const char* program_name) {
             // (you will have to change this later).
             
             //pages[a / PAGESIZE].refcount = 1;
-            kalloc(PAGESIZE);
+            // kalloc(PAGESIZE);
         }
     }
 
 
     // We now copy instructions and data into memory that we just allocated.
     for (loader.reset(); loader.present(); ++loader) {
-        memset((void*) loader.va(), 0, loader.size());
-        memcpy((void*) loader.va(), loader.data(), loader.data_size());
+        vmiter it(ptable[pid].pagetable, loader.va());
+        memset((void*) it.pa(), 0, loader.size());
+        memcpy((void*) it.pa(), loader.data(), loader.data_size());
     }
 
     // Set %rip and mark the entry point of the code.
     ptable[pid].regs.reg_rip = loader.entry();
 
     // We also need to allocate a page for the stack.
-    uintptr_t stack_addr = PROC_START_ADDR + PROC_SIZE * pid - PAGESIZE;
+    uintptr_t stack_addr = MEMSIZE_VIRTUAL - PAGESIZE;
     //assert(!pages[stack_addr / PAGESIZE].used());
-    kalloc(PAGESIZE);
-    vmiter it(kernel_pagetable, stack_addr);
-    if(it.present() && it.writable()){
-        vmiter(ptable[pid].pagetable, it.va()).map(it.pa(), it.perm());
-    }
+    uint64_t phys_stack_addr = (uint64_t) kalloc(PAGESIZE);
+    vmiter(ptable[pid].pagetable, stack_addr).map(phys_stack_addr, PTE_PWU);
     
     // Again, we're using the physical page that has the same address as the `stack_addr` to
     // maintain the one-to-one mapping between physical and virtual memory (you will have to change
     // this later).
     //pages[stack_addr / PAGESIZE].refcount = 1;
     // Set %rsp to the start of the stack.
-    ptable[pid].regs.reg_rsp = stack_addr + PAGESIZE;
+    ptable[pid].regs.reg_rsp = MEMSIZE_VIRTUAL;
 
     // Finally, mark the process as runnable.
     ptable[pid].state = P_RUNNABLE;
@@ -381,16 +377,19 @@ int syscall_page_alloc(uintptr_t addr) {
     //assert(!pages[addr / PAGESIZE].used());
     //    `Addr` should be page-aligned (i.e., a multiple of PAGESIZE == 4096),
     //    >= PROC_START_ADDR, and < MEMSIZE_VIRTUAL.
-    
     if((addr % PAGESIZE != 0) || addr < PROC_START_ADDR || addr > MEMSIZE_VIRTUAL){
         return -1;
     }
-    uintptr_t new_addr = (uintptr_t) kalloc(PAGESIZE);
-    memset((void*) new_addr, 0, PAGESIZE);
+    uintptr_t phys_addr = (uintptr_t) kalloc(PAGESIZE);
+    if (!phys_addr) {
+        return -1;
+    }
 
-    vmiter it(kernel_pagetable, addr);
-    vmiter(ptable[current->pid].pagetable, new_addr).map(it.pa(), it.perm());
-    //pages[addr / PAGESIZE].refcount = 1;
+    if (vmiter(current->pagetable, addr).try_map(phys_addr, PTE_PWU) == -1) {
+        return -1;
+    };
+    memset((void*) phys_addr, 0, PAGESIZE);
+    // pages[phys_addr / PAGESIZE].refcount = 1;
     
     return 0;
     // Currently we're simply using the physical page that has the same address
