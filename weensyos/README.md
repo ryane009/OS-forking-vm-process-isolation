@@ -3,12 +3,12 @@ Project 4 - WeensyOS
 
 <!-- TODO: Fill this out. -->
 
-## Design Overview:
+## Design Overview: 
 
-## Collaborators:
+## Collaborators: azchen, yguan14, wcpark
 
-## Extra Credit Attempted:
+## Extra Credit Attempted: None
 
 ## How long did it take to complete WeensyOS?
 
-<!-- Enter an approximate number of hours that you spent actively working on the project. -->
+<!-- Enter an approximate number of hours that you spent actively working on the project. --> 30
