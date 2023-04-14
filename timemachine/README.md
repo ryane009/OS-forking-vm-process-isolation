@@ -4,7 +4,7 @@ SRC Project: Software Preservation
 <!-- TODO: Fill this out. Text between arrow symbols (like this) is
 a Markdown comment; you can delete the text and the arrow symbols. -->
 
-## Partner CS login:
+## Partner CS login: azchen
 
 ## Part 1
 
