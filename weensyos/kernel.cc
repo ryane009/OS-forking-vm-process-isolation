@@ -45,7 +45,7 @@ pageinfo pages[NPAGES];
 void exception(regstate* regs);
 uintptr_t syscall(regstate* regs);
 void memshow();
-void free_helper(proc* process);
+void free_helper(x86_64_pagetable* table);
 
 
 // kernel(command)
@@ -400,6 +400,7 @@ int syscall_page_alloc(uintptr_t addr) {
 
     if (vmiter(current->pagetable, addr).try_map(phys_addr, PTE_PWU) == -1) {
         kfree((void*)phys_addr);
+        free_helper((x86_64_pagetable*) phys_addr);
         return -1;
     }
     //memset((void*) vmiter(current->pagetable, addr).pa(), 0, PAGESIZE);
@@ -418,52 +419,59 @@ int syscall_page_alloc(uintptr_t addr) {
 pid_t syscall_fork() {
     // Implement for Step 5!
     int new_pid = 1;
+    proc* child = nullptr;
     for(int i = 1; i < NPROC; i++){
         if(ptable[i].state == P_FREE){
             new_pid = i;
+            child = &ptable[new_pid];
             break;
         }
+    }
+    if(child == nullptr){
+        return -1;
     }
     x86_64_pagetable* child_addr = (x86_64_pagetable*) kalloc(PAGESIZE);
     if(!child_addr){
         kfree((void*) child_addr);
         return -1;
     }
-    proc* child = &ptable[new_pid];
+    
     child->pagetable = child_addr;
     child -> pid = new_pid;
     memset(child->pagetable, 0, PAGESIZE);
     vmiter child_it(child_addr, 0);
     for(vmiter p_it(current->pagetable,0); p_it.va() < MEMSIZE_VIRTUAL; p_it += PAGESIZE){
-        if(p_it.user() && (p_it.va() != CONSOLE_ADDR)){
+        if(p_it.user() && p_it.va() != CONSOLE_ADDR){
             if(!p_it.writable()){
                 if(child_it.try_map(p_it.pa(), p_it.perm()) == -1){
-                    free_helper(child);
+                    free_helper(child->pagetable);
+                    child->state = P_FREE;
                     return -1;
                 }
                 pages[p_it.pa() / PAGESIZE].refcount++;
             }
-            else if(p_it.user()){
+            else{
                 void* phys_page = kalloc(PAGESIZE);
                 if(!phys_page){
-                    free_helper(child);
+                    free_helper(child->pagetable);
+                    kfree(phys_page);
+                    child->state = P_FREE;
                     return -1;
                 }
                 memset(phys_page, 0, PAGESIZE);
                 memcpy(phys_page, (void*) p_it.pa(), PAGESIZE);
                 if(child_it.try_map(phys_page, p_it.perm()) == -1){
-                    free_helper(child);
+                    free_helper(child->pagetable);
                     kfree(phys_page);
+                    child->state = P_FREE;
                     return -1;
                 }
             }
         }
         else{
-            if(child_it.user()){
-
-            }
             if(child_it.try_map(p_it.pa(), p_it.perm()) == -1){
-                free_helper(child);
+                free_helper(child->pagetable);
+                child->state = P_FREE;
                 return -1;
             }
         }
@@ -476,30 +484,21 @@ pid_t syscall_fork() {
     //panic("Unexpected system call %ld!\n", SYSCALL_FORK);
 }
 
-void free_helper(proc* to_remove){
-    // ptiter it(to_remove, 0);
-    // while(it.active()){
-    //     if(!it.low() && it.pa() != CONSOLE_ADDR){
-    //         for(vmiter p_it(it.kptr()); p_it.va() < MEMSIZE_VIRTUAL; p_it += PAGESIZE){
-    //             if(p_it.user() && p_it.va() != CONSOLE_ADDR){
-    //                 kfree((void*) p_it.pa());
-    //             }
-    //         }
-    //     }
-    // }
-    // to_remove->state = P_FREE;
+void free_helper(x86_64_pagetable* table){
+    if(!table){
+        kfree(table);
+    }
 
-    for(vmiter it(to_remove->pagetable, 0); it.va() < MEMSIZE_VIRTUAL; it += PAGESIZE){
+    for(vmiter it(table, 0); it.va() < MEMSIZE_VIRTUAL; it += PAGESIZE){
         if(it.user() && it.pa() != CONSOLE_ADDR){
             kfree((void*) it.pa());
         }
     }
 
-    for (ptiter it(to_remove); it.active(); it.next()) {
+    for (ptiter it(table); it.active(); it.next()) {
         kfree(it.kptr());
     }
-    kfree(to_remove);
-    to_remove->state = P_FREE;
+    kfree(table);
 }
 
 // syscall_exit()
@@ -507,8 +506,8 @@ void free_helper(proc* to_remove){
 //    implements the specification for `sys_exit` in `u-lib.hh`.
 void syscall_exit() {
     // Implement for Step 7!
+    free_helper(current->pagetable);
     current->state = P_FREE;
-    free_helper(current);
     //panic("Unexpected system call %ld!\n", SYSCALL_EXIT);
 }
 

@@ -5,7 +5,7 @@ Project 4 - WeensyOS
 
 ## Design Overview: 
 
-## Collaborators: azchen, yguan14, wcpark
+## Collaborators: azchen, yguan14, wcpark, mstu, cgelbbic, jchen397
 
 ## Extra Credit Attempted: None
 
