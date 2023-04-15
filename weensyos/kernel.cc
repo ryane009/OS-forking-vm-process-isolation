@@ -457,7 +457,7 @@ pid_t syscall_fork() {
                     kfree(phys_page);
                     child->state = P_FREE;
                     return -1;
-                }
+                 }
                 memset(phys_page, 0, PAGESIZE);
                 memcpy(phys_page, (void*) p_it.pa(), PAGESIZE);
                 if(child_it.try_map(phys_page, p_it.perm()) == -1){
