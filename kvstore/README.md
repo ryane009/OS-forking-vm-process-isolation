@@ -5,11 +5,11 @@ Project 5A - Concurrent Store
 
 ## Design Overview:
 
-## Collaborators:
+## Collaborators: wcpark
 
-## Extra Credit Attempted:
+## Extra Credit Attempted: 0
 
-## How long did it take to complete the Concurrent Store portion of KVStore?
+## How long did it take to complete the Concurrent Store portion of KVStore?: 10
 
 <!-- Enter an approximate number of hours that you spent actively working on the project. -->
 

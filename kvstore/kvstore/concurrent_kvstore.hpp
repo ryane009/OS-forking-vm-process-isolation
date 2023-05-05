@@ -39,6 +39,7 @@ class DbMap {
   DbMap() = default;
 
   static constexpr size_t BUCKET_COUNT = 60;
+  std::array<std::shared_mutex, BUCKET_COUNT> mutex_list;
 
   // Bucket associative array, with corresponding mutexes to protect access.
   std::array<std::list<DbItem>, BUCKET_COUNT> buckets;
@@ -106,6 +107,7 @@ class ConcurrentKvStore : public KvStore {
  private:
   // Your internal key-value store implementation!
   DbMap store;
+  std::mutex mutex;
 };
 
 #endif /* end of include guard */
