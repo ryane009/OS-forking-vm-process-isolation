@@ -226,12 +226,15 @@ bool SimpleClient::GDPRDelete(const std::string& user) {
           for(int n = 0; n < name_parts.size(); n++){
             size_t index = text.find(name_parts[n]);
             while(index != std::string::npos){
+              content.value().erase(index, name_parts[n].size());
+              content.value().insert(index, "*");
+
               text.erase(index, name_parts[n].size());
               text.insert(index, "*");
               index = text.find(name_parts[n], index + 1);
             }
           }
-          Put(post_ids[i], text);
+          Put(post_ids[i], content.value());
         }
       }
 
