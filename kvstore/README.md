@@ -5,7 +5,7 @@ Project 5A - Concurrent Store
 
 ## Design Overview:
 
-## Collaborators: wcpark
+## Collaborators: wcpark, azchen
 
 ## Extra Credit Attempted: 0
 
@@ -19,12 +19,12 @@ Project 5B - Distributed Store
 
 <!-- TODO: Fill this out. -->
 
-## Design Overview:
+## Design Overview: to parse through the strings, I used strtok
 
-## Collaborators:
+## Collaborators: wcpark, azchen, eko10
 
-## Extra Credit Attempted:
+## Extra Credit Attempted: 0
 
-## How long did it take to complete the Distributed Store portion of KVStore?
+## How long did it take to complete the Distributed Store portion of KVStore?: 8 hours
 
 <!-- Enter an approximate number of hours that you spent actively working on the project. -->
